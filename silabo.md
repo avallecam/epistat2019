@@ -43,20 +43,18 @@
 	- outcome: Categorico Dicotómico
     		- medida: PR
     		- función: glm log-binomial, log-poisson
-
 4. Estudios caso y control
 	- outcome: Categorico Dicotómico
-    	- medida: OR
-    	- función: glm logit-binomial
+    		- medida: OR
+    		- función: glm logit-binomial
 
 ### extra
 
-x. Tiempos a evento
+5. Tiempos a evento
   	- outcome: Categórico Dicotómico
     		- medida: HR
     		- paquete: survival, survminer
-
-y. Estudios prospectivos
+6. Estudios prospectivos
 	- outcome: Categórico Dicotómico
     		- medida RR
     		- funcion: glm log-binomial, log-poisson
