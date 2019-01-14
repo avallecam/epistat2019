@@ -1,0 +1,5 @@
+*.pdf
+notrack/
+figure/
+table/
+data-raw/
