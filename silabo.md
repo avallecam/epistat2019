@@ -40,9 +40,11 @@
   	- material: cuadro comparativo con ejemplos
 
 3. Estudios transversales
+	
 	- outcome: Numérico Continuo
     		- medida: coeficiente
     		- función: lm
+	
 	- outcome: Categorico Dicotómico
     		- medida: PR
     		- función: glm log-binomial, log-poisson
@@ -55,11 +57,13 @@
 ### extra
 
 5. Tiempos a evento
-  	- outcome: Categórico Dicotómico
+  	
+	- outcome: Categórico Dicotómico
     		- medida: HR
     		- paquete: survival, survminer
 
 6. Estudios prospectivos
+	
 	- outcome: Categórico Dicotómico
     		- medida RR
     		- funcion: glm log-binomial, log-poisson
