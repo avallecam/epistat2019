@@ -30,12 +30,15 @@
 0. Introducción: 
 	- objetivo: Crear y organizar proyectos en R
   	- herramienta: Rstudio IDE
+
 1. Analisis descriptivo:
   	- objetivo: generar automáticamente tabla 1 y 2
   	- paquete: tableone, compareGroups
+
 2. Tipos de modelamiento (10 - 15 mins)
   	- objetivo: presentar enfoques epidemiológico causal y bioestadístico (exploratorio o predictivo)
   	- material: cuadro comparativo con ejemplos
+
 3. Estudios transversales
 	- outcome: Numérico Continuo
     		- medida: coeficiente
@@ -43,6 +46,7 @@
 	- outcome: Categorico Dicotómico
     		- medida: PR
     		- función: glm log-binomial, log-poisson
+
 4. Estudios caso y control
 	- outcome: Categorico Dicotómico
     		- medida: OR
@@ -54,6 +58,7 @@
   	- outcome: Categórico Dicotómico
     		- medida: HR
     		- paquete: survival, survminer
+
 6. Estudios prospectivos
 	- outcome: Categórico Dicotómico
     		- medida RR
