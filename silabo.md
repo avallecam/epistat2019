@@ -71,7 +71,7 @@
 Competencia a medir: 
 
 - Identificar tipo de estudio y calcular medida de asociación de interés.
-- Estudios -> Problema -> R
+- Problema -> Estudio -> R
 
 ## links
 
