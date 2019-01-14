@@ -44,15 +44,12 @@
 	- tiempo: 10 - 15 min
 
 3. Estudios transversales
-	
 	- outcome: Numérico Continuo
     		- medida: coeficiente
     		- función: lm
-	
 	- outcome: Categorico Dicotómico
     		- medida: PR
     		- función: glm log-binomial, log-poisson
-
 4. Estudios caso y control
 	- outcome: Categorico Dicotómico
     		- medida: OR
