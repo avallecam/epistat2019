@@ -57,13 +57,13 @@
 
 5. Tiempos a evento
 	- outcome: Categórico Dicotómico
-    		- medida: HR
-    		- paquete: survival, survminer
+		- medida: HR
+		- paquete: survival, survminer
 
 6. Estudios prospectivos
 	- outcome: Categórico Dicotómico
-    		- medida RR
-    		- funcion: glm log-binomial, log-poisson
+		- medida RR
+		- funcion: glm log-binomial, log-poisson
 
 ## Tareas
 
