@@ -28,16 +28,20 @@
 ### obligatorio
 
 0. Introducción: 
+
 	- objetivo: Crear y organizar proyectos en R
   	- herramienta: Rstudio IDE
 
 1. Analisis descriptivo:
+
   	- objetivo: generar automáticamente tabla 1 y 2
   	- paquete: tableone, compareGroups
 
-2. Tipos de modelamiento (10 - 15 mins)
+2. Tipos de modelamiento
+
   	- objetivo: presentar enfoques epidemiológico causal y bioestadístico (exploratorio o predictivo)
   	- material: cuadro comparativo con ejemplos
+	- tiempo: 10 - 15 min
 
 3. Estudios transversales
 	
