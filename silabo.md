@@ -10,6 +10,7 @@
 
 - población: estudiantes de medicina socimed peru
 - localizacion: upch-miraflores, auditorio?
+- tiempo: 4h
 - Internet: conexión a CSUR-LIBRE, buena calidad y saturación?
 - Rstudio Cloud: 
   - depende de la calidad de conexión a internet
