@@ -28,45 +28,43 @@
 ### obligatorio
 
 0. Introducción: 
-  - objetivo: Crear y organizar proyectos en R
-  - herramienta: Rstudio IDE
-
+	- objetivo: Crear y organizar proyectos en R
+  	- herramienta: Rstudio IDE
 1. Analisis descriptivo:
-  - objetivo: generar automáticamente tabla 1 y 2
-  - paquete: tableone, compareGroups
-
+  	- objetivo: generar automáticamente tabla 1 y 2
+  	- paquete: tableone, compareGroups
 2. Tipos de modelamiento (10 - 15 mins)
-  - objetivo: presentar enfoques epidemiológico causal y bioestadístico (exploratorio o predictivo)
-  - material: cuadro comparativo con ejemplos
- 
+  	- objetivo: presentar enfoques epidemiológico causal y bioestadístico (exploratorio o predictivo)
+  	- material: cuadro comparativo con ejemplos
 3. Estudios transversales
 	- outcome: Numérico Continuo
-    - medida: coeficiente
-    - función: lm
-  - outcome: Categorico Dicotómico
-    - medida: PR
-    - función: glm log-binomial, log-poisson
+    		- medida: coeficiente
+    		- función: lm
+	- outcome: Categorico Dicotómico
+    		- medida: PR
+    		- función: glm log-binomial, log-poisson
 
 4. Estudios caso y control
 	- outcome: Categorico Dicotómico
-    - medida: OR
-    - función: glm logit-binomial
+    	- medida: OR
+    	- función: glm logit-binomial
 
 ### extra
 
 x. Tiempos a evento
-  - outcome: Categórico Dicotómico
-    - medida: HR
-    - paquete: survival, survminer
+  	- outcome: Categórico Dicotómico
+    		- medida: HR
+    		- paquete: survival, survminer
 
 y. Estudios prospectivos
 	- outcome: Categórico Dicotómico
-    - medida RR
-    - funcion: glm log-binomial, log-poisson
+    		- medida RR
+    		- funcion: glm log-binomial, log-poisson
 
 ## Tareas
 
 Competencia a medir: 
+
 - Identificar tipo de estudio y calcular medida de asociación de interés.
 - Estudios -> Problema -> R
 
