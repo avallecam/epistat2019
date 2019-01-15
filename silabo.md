@@ -28,38 +28,41 @@
 
 ### obligatorio
 
-0. Introducción: 
+0. Presentar el problema y enfoque (20 min)
+  	- Presentar problema cancer y fumar.
+	- Enfoque causal, confusion con el ejemplo de cafe y cancer de pulmon.
+  	- cuadro comparativo: disenos y medidas de asociacion!
+
+1. Introducción: (10 min)
 	- objetivo: Crear y organizar proyectos en R
   	- herramienta: Rstudio IDE
 
-1. Analisis descriptivo:
+2. Analisis descriptivo: (30 min)
   	- objetivo: generar automáticamente tabla 1 y 2
   	- paquete: tableone, compareGroups
 
-2. Tipos de modelamiento
-  	- objetivo: presentar enfoques epidemiológico causal y bioestadístico (exploratorio o predictivo)
-  	- material: cuadro comparativo con ejemplos
-	- tiempo: 10 - 15 min
-
-3. Estudios transversales
-	- outcome: Numérico Continuo
-		- medida: coeficiente
-		- función: lm
+3. qué es un regresion, cómo funciona, como la interpreto (30 min)
+	- lm
+	- logistica: odds
+	
+3. Estudios transversales (50 min)
 	- outcome: Categorico Dicotómico
 		- medida: PR
 		- función: glm log-binomial, log-poisson
+	- Ejecutar el modelo
+	- Saber interpretar el modelo
 
-4. Estudios caso y control
+4. Estudios caso y control (50 min)
 	- outcome: Categorico Dicotómico
 		- medida: OR
 		- función: glm logit-binomial
 
-### extra
-
-5. Tiempos a evento
+5. Tiempos a evento (50 min)
 	- outcome: Categórico Dicotómico
-		- medida: HR
+		- medida: kaplan-meier
 		- paquete: survival, survminer
+
+### extra
 
 6. Estudios prospectivos
 	- outcome: Categórico Dicotómico
