@@ -3,3 +3,5 @@ notrack/
 figure/
 table/
 data-raw/
+*.Rproj.user
+*.Rproj
