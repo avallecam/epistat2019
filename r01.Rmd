@@ -1,0 +1,637 @@
+---
+title: "Modelos Lineales"
+author: "Andree Valle-Campos"
+date: '`r Sys.Date()`'
+output:
+  ioslides_presentation:
+    widescreen: true
+    smaller: true
+    #incremental: true
+    transition: faster
+    #logo: "notrack/logo_emerge.png"
+---
+
+```{r setup, include=FALSE, message=FALSE}
+library(tidyverse)
+library(broom)
+library(haven)
+library(ggdag)
+library(compareGroups)
+
+knitr::opts_chunk$set(echo = TRUE,message=FALSE,warning=FALSE, error=FALSE)
+theme_set(theme_bw())
+```
+
+## Temario
+
+1. **Introducción**
+2. **Regresión Lineal** 
+    - Simple
+    - Múltiple
+5. **Estudios observacionales**
+    - Introducción
+    - Caso-Control
+    - Transversales
+4. **Regresión Logística**
+    - Odds Ratio
+    - Prevalence Ratio
+6. **Estudios adicionales**
+    - Cohortes - Risk Ratio
+    - Desenlace conteo o tasas - Incidence Risk Ratio
+    - Sobrevida - Hazard Ratio
+
+## Introducción
+
+### ¿qué preguntas permite resolver una regresión?
+
+- permite fijar al menos una **variable independiente** o **exposición** y observar una respuesta en la **variable dependiente** o **desenlace**.
+
+- permite **explicar** el cambio promedio de un evento $Y$ en base a cambios en $X$, usando coeficientes o medidas de asociación.
+
+- permite **predecir** la probabilidad asociada a un evento.
+
+<!-- direccionalidad -> causalidad || clasificar -->
+
+![](notrack/nmeth.3627-F1.jpg)
+
+## Regresión Lineal Simple  {.columns-2}
+
+### características
+
+- **una** variable independiente (simple)
+- **una** variable dependiente (univariada)
+- ambas variables deben ser **numéricas**
+
+### objetivos
+
+- ajustar datos a una recta
+- interpretar medida de bondad de ajuste ( _R^2^_ ) y coeficientes
+- evaluar supuestos
+- visualizar el modelo
+
+```{r, echo=FALSE,fig.height=4,fig.width=3}
+women %>% ggplot(aes(weight,height)) + geom_point() + geom_smooth(method = "lm")
+```
+
+$$ Y = \beta_0 + \beta_1 X_1 + \epsilon $$
+
+## RLS: datos
+
+```{r}
+espir <- read_dta("data-raw/espirometria.dta") %>% as_factor()
+espir
+```
+
+## RLS: distribución
+
+- __supuestos:__
+  + **#1** linealidad
+  + **#2** independencia de observaciones
+
+```{r,fig.height=3,fig.width=3}
+espir %>% 
+  ggplot(aes(edad,vef)) +
+  geom_point()
+```
+
+## RLS: suma de mínimos cuadrados  {.columns-2}
+
+<!--![fuente: `https://youtu.be/nk2CQITm_eo`](notrack/lss.png)-->
+
+```{r, echo=FALSE, fig.cap="", out.width = '90%'}
+knitr::include_graphics("notrack/lss.png")
+```
+
+Cálculo de la **sumatoria del cuadrado de los residuales** hacia la media y la recta:
+
+$$ SS(mean) = \sum (data - mean)^2 $$
+$$ SS(fit) = \sum (data - fit)^2 $$
+
+$$ Var(x) = \frac{\sum(data - x)^2}{n} $$
+
+Medida de **bondad de ajuste**:
+
+$$ R^2 = \frac{Var(mean) - Var(fit)}{Var(mean)}  $$
+
+## RLS: R^2^
+
+```{r}
+wm1 <- lm(vef ~ edad, data = espir)
+wm1 %>% glance()
+```
+
+**INTERPRETACIÓN**
+
+- **edad** _explica_ el **57%** de la variabilidad de **VEF**
+- existe un **57%** _de reducción en_ la variabilidad de **VEF** al tomar en cuenta la **edad**
+
+## RLS: coeficientes
+
+```{r}
+wm1 %>% tidy()
+wm1 %>% confint_tidy()
+```
+
+- En la población, 
+- por cada incremento de **edad** en _una unidad_, el **VEF** en promedio _incrementa_ en 0.22 mL/s,
+- con un intervalo de confianza de 0.21 a 0.24 mL/s.
+- Este resultado es estadísticamente significativo con un valor **p < 0.001**
+ 
+## RLS: supuesto **#3** normalidad {.columns-2}
+
+```{r,fig.height=3,fig.width=3}
+wm1 %>% 
+  augment() %>% 
+  ggplot() +
+  geom_qq(aes(sample=.std.resid)) + 
+  geom_qq_line(aes(sample=.std.resid))
+```
+
+- **META:** todos los puntos sobre la línea
+
+```{r,fig.height=3,fig.width=3,eval=TRUE, echo=TRUE}
+wm1 %>% augment() %>% 
+  ggplot(aes(.std.resid)) +
+  geom_histogram()
+```
+
+## RLS: supuesto **#4** homoscedasticidad
+
+```{r,fig.height=3,fig.width=3,message=FALSE,error=FALSE}
+wm1 %>% 
+  augment() %>% 
+  ggplot(aes(.fitted,.std.resid)) +
+  geom_point() +
+  geom_smooth() +
+  geom_hline(yintercept = c(0))
+```
+
+- **META:** distribución idéntica a ambos lados de la línea
+
+## RLS: ¿cómo se ve el modelo?
+
+$$ Y = \beta_0 + \beta_1 X_1 + \epsilon $$
+$$ VEF = 0.60 + 0.22 (edad) + \epsilon $$
+
+```{r,fig.height=3,fig.width=3}
+espir %>% 
+  ggplot(aes(edad,vef)) +
+  geom_point() + 
+  geom_smooth(method = "lm")
+```
+
+<!-- - ¿qué pasa si borramos `method = "lm"`? -->
+
+
+## RLS: retroalimentación
+
+- **R^2^** indica el porcentaje de variabilidad del desenlace (var. dependiente) explicada por el predictor (var. independiente).
+
+- los **coeficientes** permiten predecir el posible valor del desenlace en base a un modelo estadístico.
+
+- los **supuestos** permiten evaluar qué tan adecuado es el ajuste de los datos al modelo.
+
+## RLS: ejercicio
+
+- ajustar una recta
+
+```{r,fig.height=3,fig.width=3,eval=FALSE}
+espir %>% 
+  ggplot(aes(edad,talla)) +
+  geom_
+```
+
+- identificar coeficientes y R^2^
+
+```{r,eval=FALSE}
+# recordar: y ~ x
+wm1 <- lm(. ~ ., data = .)
+wm1 %>% g
+wm1 %>% t
+wm1 %>% c
+```
+
+- evaluar supuestos: normalidad y homoscedasticidad
+
+```{r,fig.height=3,fig.width=3,eval=FALSE}
+wm1 %>% augment() %>% 
+  ggplot() +
+
+wm1 %>% augment() %>% 
+  ggplot(aes(.fitted,.std.resid)) +
+```
+
+## Intermedio #1: Tabla 1 y 2
+
+### "... ¡en un solo comando!"
+
+```{r,message=FALSE}
+compareGroups(fumar ~ edad + vef + talla + sexo,
+              data = espir, byrow=T#,method=c(vef=2)
+              ) %>% 
+  createTable(show.all = T) #%>% export2xls("table/tab1.xls")
+```
+
+## Intermedio: distribuciones
+
+```{r,fig.height=2,fig.width=6,message=FALSE,error=FALSE,warning=FALSE}
+espir %>% 
+  select(edad,vef,talla) %>% 
+  gather(key,value) %>% 
+  ggplot(aes(value)) +
+  geom_histogram() +
+  facet_wrap(~key,scales = "free")
+```
+
+```{r,echo=FALSE}
+epi_summary <- function(df, x) {
+  
+  x_var <- enquo(x)
+  
+  df %>% 
+    summarise(n_obs=n(),
+              min=min(!!x_var,na.rm = T),
+              max=max(!!x_var,na.rm = T),
+              mean=mean(!!x_var,na.rm = T) %>% signif(.,
+                                                    digits = str_length(str_replace(.,"(.+)\\.(.+)","\\1")) + 2),
+              sd=sd(!!x_var,na.rm = T),
+              q25=quantile(!!x_var,probs = 0.25,na.rm = T),
+              q50=median(!!x_var,na.rm = T),
+              q75=quantile(!!x_var,probs = 0.75,na.rm = T),
+              skewness=moments::skewness(!!x_var,na.rm = T),
+              kurtosis=moments::kurtosis(!!x_var,na.rm = T)
+              ) #%>% 
+    #mutate(var=enquo(x)) %>% 
+    #select(var,everything())
+}
+```
+
+```{r,echo=FALSE}
+epi_summary(espir,vef)
+```
+
+
+## Regresión Lineal Múltiple  {.columns-2}
+
+### características
+
+- **dos o más** variables independientes (múltiple)
+- **una** variable dependiente **categórica dicotómica**
+
+### objetivo
+
+- **epidemiológico**: controlar **confusión** en el análisis.
+  + estandarización (directa/indirecta), 
+  + estratificación, 
+  + puntajes de propensión, 
+  + regresión _multivariable_
+
+- **estadístico**: emplear múltiples predictores
+  + lineales, no-lineales, segmentadas
+
+```{r, fig.align='center',fig.width=6,fig.height=4,echo=FALSE,out.width =  '500px'}
+dagconf <- dagify(y ~ x,
+       y ~ conf + x,
+       x ~ conf,
+       labels = c("y" = "cáncer piel", 
+                  "x" = "exp. solar",
+                  "conf" = "café"
+                  ),
+       exposure = "x",
+       outcome = "y")
+
+ggdag_adjustment_set(dagconf, text = TRUE, use_labels = "label",label_size = 0.005,text_size = 4)
+#ggdag_paths(dagconf, text = TRUE, use_labels = "label",label_size = 0.005,text_size = 4)
+```
+
+
+## RLM: distribución
+
+```{r,fig.height=3,fig.width=4}
+espir %>% 
+  ggplot(aes(edad,vef,colour=sexo)) +
+  geom_point()
+```
+
+## RLM: R^2^
+
+```{r}
+wm1 <- lm(vef ~ edad + sexo, data = espir)
+wm1 %>% glance()
+```
+
+**INTERPRETACIÓN**
+
+- **edad** y **sexo** _explica_ el **60%** de la variabilidad de **VEF**.
+- existe un **60%** _de reducción en_ la variabilidad de **VEF** al tomar en cuenta la **edad** y el **sexo**.
+
+## RLM: coeficientes
+
+```{r}
+wm1 %>% tidy()
+wm1 %>% confint_tidy()
+```
+
+- En la población, el **VEF** en promedio en **mujeres** es 0.32 mL/s menor que en **hombres**,
+- con un intervalo de confianza de 0.24 a 0.41 mL/s, **_ajustando_** por edad.
+- Este resultado es estadísticamente significativo con un valor **p < 0.001**
+ 
+## RLM: supuesto normalidad {.columns-2}
+
+```{r,fig.height=3,fig.width=3}
+wm1 %>% 
+  augment() %>% 
+  ggplot() +
+  geom_qq(aes(sample=.std.resid)) + 
+  geom_qq_line(aes(sample=.std.resid))
+```
+
+- **META:** todos los puntos sobre la línea
+
+```{r,fig.height=3,fig.width=3,eval=TRUE, echo=TRUE}
+wm1 %>% augment() %>% 
+  ggplot(aes(.std.resid)) +
+  geom_histogram()
+```
+
+## RLM: supuesto homoscedasticidad
+
+```{r,fig.height=3,fig.width=3,message=FALSE,error=FALSE}
+wm1 %>% 
+  augment() %>% 
+  ggplot(aes(.fitted,.std.resid)) +
+  geom_point() +
+  geom_smooth() +
+  geom_hline(yintercept = c(0))
+```
+
+- **META:** distribución idéntica a ambos lados de la línea
+
+## RLM: ¿cómo se ve el modelo?
+
+$$ Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \epsilon $$
+$$ VEF = 0.60 + 0.22 (edad) - 0.32 (sexo) + \epsilon $$
+
+```{r,fig.height=3,fig.width=3}
+wm1 %>% augment() %>% 
+  ggplot(aes(colour= sexo)) +
+  geom_point(aes(edad,vef),alpha=0.05) +
+  geom_line(aes(edad,.fitted), lwd=1.5)
+```
+
+## RLM: ejercicio
+
+## Intermedio #2: Modificación de efecto
+
+### ¿cómo se ve un modelo con ajuste por confusión e __interacción__?
+
+```{r,fig.height=3,fig.width=4,eval=FALSE, echo=FALSE}
+espir %>% 
+  ggplot(aes(edad,vef,colour=fumar)) +
+  geom_point() + geom_smooth(method = "lm")
+```
+
+```{r,eval=TRUE, echo=FALSE}
+#identificar coeficientes y R^2^
+# recordar: y ~ x
+wm1 <- lm(vef ~ edad*fumar + sexo, data = espir)
+#wm1 %>% glance()
+#wm1 %>% tidy()
+#wm1 %>% confint_tidy()
+```
+
+
+```{r,fig.height=3,fig.width=3,echo=FALSE, eval=FALSE}
+#evaluar supuestos: normalidad
+wm1 %>% augment() %>% ggplot() +
+  geom_qq(aes(sample=.std.resid)) + 
+  geom_qq_line(aes(sample=.std.resid))
+```
+
+```{r,fig.height=3,fig.width=3,eval=FALSE, echo=FALSE}
+wm1 %>% augment() %>% 
+  ggplot(aes(.std.resid)) +geom_histogram()
+```
+
+```{r,fig.height=3,fig.width=3,message=FALSE,error=FALSE, echo=FALSE,eval=FALSE}
+#supuesto homoscedasticidad
+wm1 %>% augment() %>% 
+  ggplot(aes(.fitted,.std.resid)) +
+  geom_point() +geom_smooth() +
+  geom_hline(yintercept = c(0))
+```
+
+- ¿cómo se ve el modelo?
+
+$$ Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 X_3 + \beta_4 (X_1 * X_2) + \epsilon $$
+
+```{r,fig.height=3,fig.width=4,eval=TRUE, echo=FALSE}
+wm1 %>% augment() %>% 
+  mutate(inter=str_c(fumar,":",sexo) %>% as.factor()) %>% 
+  ggplot(aes(colour=inter)) + 
+  geom_line(aes(edad,.fitted), lwd=1.5)
+```
+
+
+## Estudios Observacionales
+
+Estudios observacionales
+
+```{r,echo=FALSE,eval=FALSE}
+t1 <- tribble(
+  ~"tipo de estudio", ~"medida de asociación",
+  "caso - control", "OR",
+  "transversal", "PR",
+  "longitudinal","RR"
+)
+rhandsontable::rhandsontable(t1,rowHeaders = F)
+```
+
+## Transversales
+
+### tabla
+
+## Caso Control
+
+### tabla
+
+## PR
+
+### tabla
+
+## OR
+
+### selección
+
+```{r}
+#?sample
+```
+
+### tabla
+
+## Regresión Logística
+
+### careacterística
+
+### objetivo
+
+## OR: datos
+
+```{r}
+logdb <- read_dta("data-raw/anxb.dta") %>% as_factor() %>% 
+  mutate(dn_cro=as.factor(dn_cro))
+logdb
+```
+
+## OR: distribución
+
+- __supuesto:__
+  + independencia de observaciones
+
+```{r, echo=FALSE}
+logdb %>% count(dn_cro) %>% mutate(prc=n/sum(n))
+```
+
+```{r,fig.height=2,fig.width=3, echo=FALSE}
+logdb %>% 
+  ggplot(aes(dn_cro,age)) +
+  geom_boxplot() +
+  coord_flip()
+```
+
+
+## OR: verosimilitud
+
+<!-- imagen PoS Nature -->
+
+## OR: ¿bondad de ajuste?
+
+```{r}
+wm1 <- glm(dn_cro ~ age, data = logdb, family = binomial(link = "log"))
+wm1 %>% glance()
+```
+
+**INTERPRETACIÓN**
+
+- ...
+
+## OR: coeficientes
+
+```{r}
+wm1 %>% tidy() %>% mutate(odds=exp(estimate))
+wm1 %>% confint_tidy() %>% mutate_all(funs(exp))
+```
+
+- En la población, por cada incremento de **edad** en _una unidad_, 
+- en promedio el odds de **desnutrición crónica** _cambia_ en 1.05, con un intervalo de confianza de 1.02 a 1.09.
+- Este resultado es estadísticamente significativo con un valor **p < 0.001**
+ 
+## OR: supuesto
+
+```{r,fig.height=3,fig.width=3, echo=FALSE, eval=FALSE}
+wm1 %>% 
+  augment() %>% 
+  ggplot() +
+  geom_qq(aes(sample=.std.resid)) + 
+  geom_qq_line(aes(sample=.std.resid))
+
+#**META:** todos los puntos sobre la línea
+```
+
+```{r,fig.height=3,fig.width=3,eval=FALSE, echo=FALSE}
+wm1 %>% augment() %>% 
+  ggplot(aes(.std.resid)) +
+  geom_histogram()
+  #geom_density()
+```
+
+```{r,fig.height=3,fig.width=3,message=FALSE,error=FALSE}
+wm1 %>% 
+  augment() %>% 
+  ggplot(aes(age,.std.resid)) +
+  geom_point() +
+  geom_smooth() +
+  geom_hline(yintercept = c(0))
+```
+
+- **META:** distribución idéntica a ambos lados de la línea
+
+
+## Regresión Logística: Prevalence Ratio
+
+## PR:
+## PR:
+## PR:
+## PR:
+
+## Regresión de Poisson: Incidence Risk Ratio
+
+
+## Sobrevida
+
+
+## Cohortes
+
+
+## Referencias
+
+- StatQuest: Linear Models Pt.1 - Linear Regression. Link: `https://youtu.be/nk2CQITm_eo`
+- Statistics for Biologist: Points of Significance. Link: `https://www.nature.com/collections/qghhqm/pointsofsignificance`
+
+
+```{r cars, eval=FALSE, echo=FALSE}
+esoph %>% as_tibble()
+```
+
+```{r, eval=FALSE , echo=FALSE}
+require(stats)
+require(graphics) # for mosaicplot
+
+esoph <- as_tibble(esoph)
+
+summary(esoph)
+```
+
+```{r, eval=FALSE , echo=FALSE}
+prop.table(table(esoph$agegp))
+```
+
+```{r, eval=FALSE , echo=FALSE}
+## effects of alcohol, tobacco and interaction, age-adjusted
+model1 <- glm(cbind(ncases, ncontrols) ~ agegp + tobgp * alcgp,
+              data = esoph, family = binomial())
+anova(model1)
+
+summary(model1)
+
+attributes(model1)
+
+#broom::augment(model1)
+broom::tidy(model1)
+broom::confint_tidy(model1)
+broom::glance(model1)
+
+plot(model1,which = 1) #homoscedasticidad (de predichos yhat vs residuales)
+plot(model1,which = 2) #normalidad (de residuales)
+```
+
+```{r, eval=FALSE , echo=FALSE}
+## Try a linear effect of alcohol and tobacco
+model2 <- glm(cbind(ncases, ncontrols) ~ agegp + unclass(tobgp)
+                                         + unclass(alcgp),
+              data = esoph, family = binomial())
+summary(model2)
+```
+
+```{r, eval=FALSE , echo=FALSE}
+## Re-arrange data for a mosaic plot
+ttt <- table(esoph$agegp, esoph$alcgp, esoph$tobgp)
+o <- with(esoph, order(tobgp, alcgp, agegp))
+ttt[ttt == 1] <- esoph$ncases[o]
+tt1 <- table(esoph$agegp, esoph$alcgp, esoph$tobgp)
+tt1[tt1 == 1] <- esoph$ncontrols[o]
+tt <- array(c(ttt, tt1), c(dim(ttt),2),
+            c(dimnames(ttt), list(c("Cancer", "control"))))
+mosaicplot(tt, main = "esoph data set", color = TRUE)
+```
+

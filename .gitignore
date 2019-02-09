@@ -1,7 +1,9 @@
 *.pdf
+*.html
 notrack/
 figure/
 table/
 data-raw/
 *.Rproj.user
 *.Rproj
+.Rproj.user
