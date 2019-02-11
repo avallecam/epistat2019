@@ -17,6 +17,12 @@ library(broom)
 library(haven)
 library(ggdag)
 library(compareGroups)
+library(knitr)
+library(kableExtra)
+library(survival)
+library(survminer)
+
+set.seed(33)
 
 knitr::opts_chunk$set(echo = TRUE,message=FALSE,warning=FALSE, error=FALSE)
 theme_set(theme_bw())
@@ -29,20 +35,39 @@ theme_set(theme_bw())
     - Simple
     - Múltiple
 5. **Estudios observacionales**
-    - Introducción
-    - Caso-Control
     - Transversales
-4. **Regresión Logística**
+    - Caso-Control
+4. **Modelos Lineales Generalizados**
     - Odds Ratio
     - Prevalence Ratio
 6. **Estudios adicionales**
     - Cohortes - Risk Ratio
-    - Desenlace conteo o tasas - Incidence Risk Ratio
-    - Sobrevida - Hazard Ratio
+    - Tiempo a evento - Hazard Ratio
+    - Desenlace conteo o tasa - Incidence Risk Ratio
 
 ## Introducción
 
-### ¿qué preguntas permite resolver una regresión?
+### ¿**qué** es R?
+
+- Software Libre
+
+### ¿**por qué** usar R?
+
+- Ciencia Reproducible:
+  - limpiar bases de datos
+  - visualizar
+  - ejecutar modelos 
+  - comunicar resultados
+
+### ¿**cómo** usar R?
+
+- IDE: RStudio
+- Paquetes
+- Funciones
+
+## Introducción
+
+### ¿**por qué** usar una **regresión**?
 
 - permite fijar al menos una **variable independiente** o **exposición** y observar una respuesta en la **variable dependiente** o **desenlace**.
 
@@ -50,9 +75,13 @@ theme_set(theme_bw())
 
 - permite **predecir** la probabilidad asociada a un evento.
 
+- .
+
 <!-- direccionalidad -> causalidad || clasificar -->
 
-![](notrack/nmeth.3627-F1.jpg)
+```{r, echo=FALSE, fig.cap="", out.width = '90%',fig.align='center'}
+knitr::include_graphics("notrack/nmeth.3627-F1.jpg")
+```
 
 ## Regresión Lineal Simple  {.columns-2}
 
@@ -82,7 +111,7 @@ espir <- read_dta("data-raw/espirometria.dta") %>% as_factor()
 espir
 ```
 
-## RLS: distribución
+## RLS: distribución {.columns-2}
 
 - __supuestos:__
   + **#1** linealidad
@@ -92,6 +121,16 @@ espir
 espir %>% 
   ggplot(aes(edad,vef)) +
   geom_point()
+```
+
+- error = residual
+
+```{r, echo=FALSE, fig.cap="", out.width = '50%'}
+knitr::include_graphics("notrack/Inkedlss01_LI.jpg")
+```
+
+```{r, echo=FALSE, fig.cap="", out.width = '50%'}
+knitr::include_graphics("notrack/Inkedlss02_LI.jpg")
 ```
 
 ## RLS: suma de mínimos cuadrados  {.columns-2}
@@ -104,10 +143,10 @@ knitr::include_graphics("notrack/lss.png")
 
 Cálculo de la **sumatoria del cuadrado de los residuales** hacia la media y la recta:
 
-$$ SS(mean) = \sum (data - mean)^2 $$
-$$ SS(fit) = \sum (data - fit)^2 $$
+$$ SSE(mean) = \sum (data - mean)^2 $$
+$$ SSE(fit) = \sum (data - fit)^2 $$
 
-$$ Var(x) = \frac{\sum(data - x)^2}{n} $$
+$$ Var(x) = \frac{SSE(x)^2}{n} $$
 
 Medida de **bondad de ajuste**:
 
@@ -117,7 +156,7 @@ $$ R^2 = \frac{Var(mean) - Var(fit)}{Var(mean)}  $$
 
 ```{r}
 wm1 <- lm(vef ~ edad, data = espir)
-wm1 %>% glance()
+wm1 %>% glance() %>% select(r.squared:df)
 ```
 
 **INTERPRETACIÓN**
@@ -132,11 +171,21 @@ wm1 %>% tidy()
 wm1 %>% confint_tidy()
 ```
 
-- En la población, 
+- $\beta_{edad}$: En la población, 
 - por cada incremento de **edad** en _una unidad_, el **VEF** en promedio _incrementa_ en 0.22 mL/s,
-- con un intervalo de confianza de 0.21 a 0.24 mL/s.
+- con un intervalo de confianza AL 95% de 0.21 a 0.24 mL/s.
 - Este resultado es estadísticamente significativo con un valor **p < 0.001**
- 
+
+## RLS: supuesto **#3** normalidad {.columns-2}
+
+```{r, echo=FALSE, fig.cap="", out.width = '75%'}
+knitr::include_graphics("notrack/Inkedlss2_LI.jpg")
+```
+
+```{r, echo=FALSE, fig.cap="", out.width = '100%'}
+knitr::include_graphics("notrack/nmeth.3854-F2.jpg")
+```
+
 ## RLS: supuesto **#3** normalidad {.columns-2}
 
 ```{r,fig.height=3,fig.width=3}
@@ -157,6 +206,14 @@ wm1 %>% augment() %>%
 
 ## RLS: supuesto **#4** homoscedasticidad
 
+```{r, echo=FALSE, fig.cap="", out.width = '65%'}
+knitr::include_graphics("notrack/nmeth.3854-F1.jpg")
+```
+
+## RLS: supuesto **#4** homoscedasticidad
+
+- **META:** distribución idéntica a ambos lados de la línea
+
 ```{r,fig.height=3,fig.width=3,message=FALSE,error=FALSE}
 wm1 %>% 
   augment() %>% 
@@ -165,8 +222,6 @@ wm1 %>%
   geom_smooth() +
   geom_hline(yintercept = c(0))
 ```
-
-- **META:** distribución idéntica a ambos lados de la línea
 
 ## RLS: ¿cómo se ve el modelo?
 
@@ -198,27 +253,27 @@ espir %>%
 ```{r,fig.height=3,fig.width=3,eval=FALSE}
 espir %>% 
   ggplot(aes(edad,talla)) +
-  geom_
+  geom____()
 ```
 
 - identificar coeficientes y R^2^
 
 ```{r,eval=FALSE}
 # recordar: y ~ x
-wm1 <- lm(. ~ ., data = .)
-wm1 %>% g
-wm1 %>% t
-wm1 %>% c
+wm1 <- lm(_____ ~ _____, data = _____)
+wm1 %>% g_____
+wm1 %>% t_____
+wm1 %>% c_____
 ```
 
 - evaluar supuestos: normalidad y homoscedasticidad
 
 ```{r,fig.height=3,fig.width=3,eval=FALSE}
 wm1 %>% augment() %>% 
-  ggplot() +
+  ggplot() + _____
 
 wm1 %>% augment() %>% 
-  ggplot(aes(.fitted,.std.resid)) +
+  ggplot(aes(.fitted,.std.resid)) + __________
 ```
 
 ## Intermedio #1: Tabla 1 y 2
@@ -276,7 +331,7 @@ epi_summary(espir,vef)
 ### características
 
 - **dos o más** variables independientes (múltiple)
-- **una** variable dependiente **categórica dicotómica**
+- **una** variable dependiente **numérica**
 
 ### objetivo
 
@@ -313,30 +368,28 @@ espir %>%
   geom_point()
 ```
 
-## RLM: R^2^
+## RLM: R^2^ y coeficientes
 
-```{r}
+```{r, echo=FALSE}
 wm1 <- lm(vef ~ edad + sexo, data = espir)
-wm1 %>% glance()
+wm1 %>% glance() %>% select(r.squared:df)
 ```
-
-**INTERPRETACIÓN**
 
 - **edad** y **sexo** _explica_ el **60%** de la variabilidad de **VEF**.
-- existe un **60%** _de reducción en_ la variabilidad de **VEF** al tomar en cuenta la **edad** y el **sexo**.
+<!--- existe un **60%** _de reducción en_ la variabilidad de **VEF** al tomar en cuenta la **edad** y el **sexo**.-->
 
-## RLM: coeficientes
-
-```{r}
-wm1 %>% tidy()
-wm1 %>% confint_tidy()
+```{r,echo=FALSE}
+m1 <- wm1 %>% tidy() %>% rownames_to_column()
+m2 <- wm1 %>% confint_tidy() %>% rownames_to_column()
+left_join(m1, m2) %>% select(-rowname)
 ```
 
+- $\beta_{sex:female}$
 - En la población, el **VEF** en promedio en **mujeres** es 0.32 mL/s menor que en **hombres**,
-- con un intervalo de confianza de 0.24 a 0.41 mL/s, **_ajustando_** por edad.
+- con un intervalo de confianza AL 95% de 0.24 a 0.41 mL/s, **_ajustando_** por edad.
 - Este resultado es estadísticamente significativo con un valor **p < 0.001**
  
-## RLM: supuesto normalidad {.columns-2}
+## RLM: supuesto normalidad y homoscedasticidad {.columns-2}
 
 ```{r,fig.height=3,fig.width=3}
 wm1 %>% 
@@ -346,15 +399,11 @@ wm1 %>%
   geom_qq_line(aes(sample=.std.resid))
 ```
 
-- **META:** todos los puntos sobre la línea
-
-```{r,fig.height=3,fig.width=3,eval=TRUE, echo=TRUE}
+```{r,fig.height=3,fig.width=3,eval=FALSE, echo=FALSE}
 wm1 %>% augment() %>% 
   ggplot(aes(.std.resid)) +
   geom_histogram()
 ```
-
-## RLM: supuesto homoscedasticidad
 
 ```{r,fig.height=3,fig.width=3,message=FALSE,error=FALSE}
 wm1 %>% 
@@ -365,7 +414,11 @@ wm1 %>%
   geom_hline(yintercept = c(0))
 ```
 
-- **META:** distribución idéntica a ambos lados de la línea
+## RLM: post-estimación
+
+- multicolinealidad: VIF
+
+- outliers: puntos influenciales o ruido
 
 ## RLM: ¿cómo se ve el modelo?
 
@@ -381,9 +434,39 @@ wm1 %>% augment() %>%
 
 ## RLM: ejercicio
 
-## Intermedio #2: Modificación de efecto
+- 3 predictores
 
-### ¿cómo se ve un modelo con ajuste por confusión e __interacción__?
+```{r, eval=FALSE}
+wm1 <- lm(vef ~ edad + sexo + fumar, data = espir)
+```
+
+- R^2^ y coeficientes
+
+```{r,eval=FALSE}
+wm1 %>% g___()
+wm1 %>% t___() 
+wm1 %>% c___()
+```
+
+- supuesto normalidad y homoscedasticidad
+
+```{r,fig.height=3,fig.width=3, eval=FALSE}
+wm1 %>% augment() %>% 
+  ggplot() +
+  geom_qq________ + 
+  geom________
+
+wm1 %>% augment() %>% 
+  ggplot(aes(_____,_____)) +
+  geom_p____()
+```
+
+
+## Intermedio #2: Modificación de efecto {.columns-2}
+
+### ¿cómo se ve el modelo?
+
+$$ Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 (X_1 * X_2) + \epsilon $$
 
 ```{r,fig.height=3,fig.width=4,eval=FALSE, echo=FALSE}
 espir %>% 
@@ -394,12 +477,20 @@ espir %>%
 ```{r,eval=TRUE, echo=FALSE}
 #identificar coeficientes y R^2^
 # recordar: y ~ x
-wm1 <- lm(vef ~ edad*fumar + sexo, data = espir)
+#wm1 <- lm(vef ~ edad*fumar + sexo, data = espir)
+wm1 <- lm(vef ~ edad*fumar, data = espir)
 #wm1 %>% glance()
-#wm1 %>% tidy()
-#wm1 %>% confint_tidy()
+m1 <- wm1 %>% tidy() %>% rownames_to_column()
+m2 <- wm1 %>% confint_tidy() %>% rownames_to_column()
+left_join(m1, m2) %>% select(term,estimate,conf.low,conf.high#,p.value
+                             )
 ```
 
+- $\beta_{interacción}$
+- La diferencia en la media de VEF asociado al incremento en 1 año de edad en **fumadores**
+- **menos**
+- la diferencia en la media de VEF asociado al incremento en 1 año de edad en **no fumadores**
+- **es `r round(coef(wm1)[4],2)` mL/s**, con un IC 95% de `r round(m2$conf.low[4],2)` a `r round(m2$conf.high[4],2)`.
 
 ```{r,fig.height=3,fig.width=3,echo=FALSE, eval=FALSE}
 #evaluar supuestos: normalidad
@@ -421,114 +512,235 @@ wm1 %>% augment() %>%
   geom_hline(yintercept = c(0))
 ```
 
-- ¿cómo se ve el modelo?
-
-$$ Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 X_3 + \beta_4 (X_1 * X_2) + \epsilon $$
-
-```{r,fig.height=3,fig.width=4,eval=TRUE, echo=FALSE}
+```{r,fig.height=3,fig.width=3,eval=TRUE, echo=FALSE,out.width = '90%'}
 wm1 %>% augment() %>% 
-  mutate(inter=str_c(fumar,":",sexo) %>% as.factor()) %>% 
-  ggplot(aes(colour=inter)) + 
+  #mutate(inter=str_c(fumar,":",sexo) %>% as.factor()) %>% 
+  #ggplot(aes(colour=inter)) + 
+  ggplot(aes(colour=fumar)) + 
+  geom_point(aes(edad,vef),alpha=0.05) +
   geom_line(aes(edad,.fitted), lwd=1.5)
 ```
 
 
 ## Estudios Observacionales
 
-Estudios observacionales
+- Asociaciones entre:
+  + condición (**expuesto** o no-expuesto)
+  + resultado (**caso** o control)
 
-```{r,echo=FALSE,eval=FALSE}
+- Tipo de análisis depende del tipo de estudio
+  + "Reclutamos $x_1$ sujetos **expuestos** y $x_2$ sujetos **no expuestos**"
+  + Tipo **Cohorte**
+  
+  + "Reclutamos $x_1$ sujetos **caso** y $x_2$ sujetos **control**"
+  + Tipo **Caso-Control**
+
+```{r,echo=FALSE,eval=TRUE,fig.align='center',out.width="50%"}
 t1 <- tribble(
   ~"tipo de estudio", ~"medida de asociación",
   "caso - control", "OR",
   "transversal", "PR",
-  "longitudinal","RR"
-)
-rhandsontable::rhandsontable(t1,rowHeaders = F)
+  "tiempo a evento", "HR",
+  "cohorte","RR"
+) 
+t1 %>% 
+  kable("pandoc") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"),full_width = F,font_size = 10)
 ```
 
-## Transversales
+## Bases de datos
 
-### tabla
+- Cohorte
+
+```{r}
+riskdb <- read_dta("data-raw/epidb.dta") %>% as_factor() %>% 
+  mutate(aids=if_else(aids==0,"No","Yes") %>% as.factor(),
+         ccr2=if_else(ccr2==1,"No","Yes") %>% as.factor())
+```
+
+- Encuesta a nivel nacional
+
+```{r}
+logdb <- read_dta("data-raw/brfss2000.dta") %>% as_factor() %>% 
+  filter(!is.na(depress))
+  #mutate(dn_cro=as.factor(dn_cro))
+```
+
+## Cohorte
+
+- Elegimos los totales de **expuestos y no expuestos**
+
+```{r}
+riskdb %>% 
+  count(ccr2,aids) %>% 
+  spread(aids,n) %>% 
+  mutate(risk=Yes/(No+Yes)) %>% 
+  mutate(rr=.$risk[2]/.$risk[1])
+```
+
+- Si cambiamos el tamaño del grupo (**no-expuestos x 100**), **no cambia** el Riesgo Relativo (RR)
+
+```{r,echo=FALSE}
+riskdb %>% 
+  count(ccr2,aids) %>% 
+  spread(aids,n) %>% 
+  mutate(No=if_else(ccr2=="No",No*100,No %>% as.double()),
+         Yes=if_else(ccr2=="No",Yes*100,Yes %>% as.double()),
+         risk=Yes/(No+Yes)) %>% 
+  mutate(rr=.$risk[2]/.$risk[1])
+```
 
 ## Caso Control
 
-### tabla
 
-## PR
+- Elegimos los totales de **casos y controles**
 
-### tabla
+- Si cambiamos el tamaño del grupo (**casos x 100**), **sí cambia** el Riesgo Relativo (RR)
 
-## OR
-
-### selección
-
-```{r}
-#?sample
+```{r,eval=FALSE}
+riskdb %>% 
+  count(ccr2,aids) %>% 
+  spread(aids,n) %>% 
+  mutate(Yes=Yes*100,
+         risk=Yes/(No+Yes)) %>% 
+  mutate(rr=.$risk[2]/.$risk[1])
 ```
 
-### tabla
+- En estudios caso-control usamos el **Odds Ratio (OR)** 
 
-## Regresión Logística
+```{r,echo=FALSE}
+riskdb %>% 
+  count(ccr2,aids) %>% 
+  spread(aids,n) %>% 
+  mutate(Yes=Yes*100,
+         risk=Yes/(No+Yes),
+         odds=Yes/No) %>% 
+  mutate(rr=.$risk[2]/.$risk[1],
+         or=.$odds[2]/.$odds[1])
+```
+
+- **sobreestima** el Riesgo Relativo (RR)
+
+## Modelos Lineales Generalizados
 
 ### careacterística
 
 ### objetivo
 
-## OR: datos
+## GLM: familias distribución y funciones de enlace
 
-```{r}
-logdb <- read_dta("data-raw/anxb.dta") %>% as_factor() %>% 
-  mutate(dn_cro=as.factor(dn_cro))
-logdb
+- tabla
+
+## GLM: verosimilitud
+
+
+```{r, echo=FALSE, fig.cap="", out.width = '40%'}
+knitr::include_graphics("notrack/nmeth.3904-F3_A.jpg")
 ```
 
-## OR: distribución
+## GLM: Regresión Logística {.columns-2}
 
-- __supuesto:__
-  + independencia de observaciones
+- Se aplica cuando el desenlace es **categórico dicotómico**
 
-```{r, echo=FALSE}
-logdb %>% count(dn_cro) %>% mutate(prc=n/sum(n))
-```
+- El término logístico refiere a la función de enlace **logit**, que convierte el resultado binario en una variable contínua de log(odds)
 
-```{r,fig.height=2,fig.width=3, echo=FALSE}
-logdb %>% 
-  ggplot(aes(dn_cro,age)) +
-  geom_boxplot() +
+$$ log\left(\frac{\pi}{1-\pi}\right) =  \beta_0 + \beta_1 X_1 + . . . + \beta_n X_n + \epsilon $$
+
+- El valor exponenciado de los coeficientes se pueden interpretar como **Odds Ratio (OR)**
+
+```{r,fig.height=2,fig.width=3}
+data_frame(x=seq(0,1,0.01)) %>% 
+  mutate(odd=x/(1-x)) %>% 
+  ggplot(aes(x,log(odd))) +
+  geom_point() +
   coord_flip()
 ```
 
 
-## OR: verosimilitud
+## GLM: ¿bondad de ajuste?
 
-<!-- imagen PoS Nature -->
+- LogLikelihood
+- Information Criterias
+  + AIC
+  + BIC
 
-## OR: ¿bondad de ajuste?
+## GLM: ¿Supuestos?
 
-```{r}
-wm1 <- glm(dn_cro ~ age, data = logdb, family = binomial(link = "log"))
-wm1 %>% glance()
-```
+## OR: Caso-Control {.columns-2}
 
-**INTERPRETACIÓN**
-
-- ...
-
-## OR: coeficientes
+- Simularemos un escenario Caso-Control
+- Seleccionaremos al azar **500 casos y 500 controles**
 
 ```{r}
-wm1 %>% tidy() %>% mutate(odds=exp(estimate))
-wm1 %>% confint_tidy() %>% mutate_all(funs(exp))
+riskdb_or <- riskdb %>% 
+  group_by(aids) %>% 
+  sample_n(50) %>% 
+  ungroup()
 ```
 
-- En la población, por cada incremento de **edad** en _una unidad_, 
-- en promedio el odds de **desnutrición crónica** _cambia_ en 1.05, con un intervalo de confianza de 1.02 a 1.09.
-- Este resultado es estadísticamente significativo con un valor **p < 0.001**
+```{r,fig.height=2,fig.width=3, echo=TRUE}
+riskdb_or %>% ggplot(aes(aids,fill=ccr2)) +
+  geom_bar(position = "fill")
+```
+
+```{r}
+riskdb_or %>% 
+  count(aids) %>% 
+  mutate(prc=n/sum(n))
+```
+
+```{r, echo=FALSE}
+riskdb_or %>% 
+  count(ccr2,aids) %>% 
+  spread(aids,n) %>% 
+  mutate(odds=Yes/No) %>% 
+  mutate(or=.$odds[2]/.$odds[1])
+```
+
+## OR: coeficientes de variables categóricas
+
+```{r}
+wm1 <- glm(aids ~ ccr2, data = riskdb_or, family = binomial(link = "logit"))
+```
+
+```{r,echo=FALSE}
+#wm1 %>% glance()
+m1 <- wm1 %>% tidy() %>% mutate(odds=exp(estimate)) %>% rownames_to_column()
+m2 <- wm1 %>% confint_tidy() %>% mutate_all(funs(exp)) %>% rownames_to_column()
+left_join(m1,m2) %>% select(term,log.odds=estimate,odds,conf.low,conf.high,p.value)
+```
+
+- $\beta_0$
+- En la población, el **odds** de tener sida dado que **no poseen CCR2** es **`r round(m1$odds[1],2)`**,
+- con un intervalo de confianza al 95% de `r round(m2$conf.low[1],2)` a `r round(m2$conf.high[1],2)`
+
+- $\beta_{CCR2:Yes}$
+- En la población, el **odds** de tener sida dado que **sí poseen CCR2** es
+- **`r round(m1$odds[2],2)`** veces, 
+- el **odds** de tener depresión dado que **no poseen CCR2**,
+- con un intervalo de confianza al 95% de `r round(m2$conf.low[2],2)` a `r round(m2$conf.high[2],2)`.
+- Este resultado no es estadísticamente significativo con un valor **p = `r round(m1$p.value[2],3)`**
+
+## OR: coeficientes de variables contínuas 
+
+```{r}
+wm1 <- glm(aids ~ age, data = riskdb_or, family = binomial(link = "logit"))
+```
+
+```{r,echo=FALSE}
+#wm1 %>% glance()
+m1 <- wm1 %>% tidy() %>% mutate(odds=exp(estimate)) %>% rownames_to_column()
+m2 <- wm1 %>% confint_tidy() %>% mutate_all(funs(exp)) %>% rownames_to_column()
+left_join(m1,m2) %>% select(term,log.odds=estimate,odds,conf.low,conf.high,p.value)
+```
+
+- $\beta_{edad}$
+- En la población, por cada incremento en un año de **edad**,
+- el **odds** de sida _cambia_ en **`r round(m1$odds[2],2)`**, con un intervalo de confianza AL 95% de `r round(m2$conf.low[2],2)` a `r round(m2$conf.high[2],2)`.
+- Este resultado no es estadísticamente significativo con un valor **p = `r round(m1$p.value[2],3)`**
  
-## OR: supuesto
-
 ```{r,fig.height=3,fig.width=3, echo=FALSE, eval=FALSE}
+## OR: supuesto
 wm1 %>% 
   augment() %>% 
   ggplot() +
@@ -545,35 +757,117 @@ wm1 %>% augment() %>%
   #geom_density()
 ```
 
-```{r,fig.height=3,fig.width=3,message=FALSE,error=FALSE}
+```{r,fig.height=3,fig.width=3,message=FALSE,error=FALSE, echo=FALSE,eval=FALSE}
 wm1 %>% 
   augment() %>% 
   ggplot(aes(age,.std.resid)) +
   geom_point() +
   geom_smooth() +
   geom_hline(yintercept = c(0))
+#- **META:** distribución idéntica a ambos lados de la línea
 ```
 
-- **META:** distribución idéntica a ambos lados de la línea
+## RR: Cohorte
+
+```{r}
+wm1 <- glm(aids ~ ccr2, data = riskdb, family = binomial(link = "log"))
+```
+
+```{r,echo=FALSE}
+#wm1 %>% glance()
+m1 <- wm1 %>% tidy() %>% mutate(odds=exp(estimate)) %>% rownames_to_column()
+m2 <- wm1 %>% confint_tidy() %>% mutate_all(funs(exp)) %>% rownames_to_column()
+left_join(m1,m2) %>% select(term,log.odds=estimate,odds,conf.low,conf.high,p.value)
+```
+
+- $\beta_0$
+- En la población, el **riesgo** de sida dado que **no poseen CCR2** es **`r round(m1$odds[1],2)`**,
+- con un intervalo de confianza AL 95% de `r round(m2$conf.low[1],2)` a `r round(m2$conf.high[1],2)`
+
+- $\beta_{CCR2:Yes}$
+- En la población, el **riesgo** de tener sida dado que **sí poseen CCR2** es
+- **`r round(m1$odds[2],2)`** veces, 
+- el **riesgo** de tener sida dado que **no poseen CCR2**,
+- con un intervalo de confianza AL 95% de `r round(m2$conf.low[2],2)` a `r round(m2$conf.high[2],2)`.
+- Este resultado no es estadísticamente significativo con un valor **p = `r round(m1$p.value[2],3)`**
 
 
-## Regresión Logística: Prevalence Ratio
+## PR: Transversal
 
-## PR:
-## PR:
-## PR:
-## PR:
+```{r}
+wm1 <- glm(depress ~ short, data = logdb, family = binomial(link = "log"))
+```
 
-## Regresión de Poisson: Incidence Risk Ratio
+```{r,echo=FALSE}
+#wm1 %>% glance()
+m1 <- wm1 %>% tidy() %>% mutate(odds=exp(estimate)) %>% rownames_to_column()
+m2 <- wm1 %>% confint_tidy() %>% mutate_all(funs(exp)) %>% rownames_to_column()
+left_join(m1,m2) %>% select(term,log.odds=estimate,odds,conf.low,conf.high,p.value)
+```
+
+- $\beta_0$
+- En la población, la **prevalencia** de depresión en sujetos que **estatura alta** es **`r round(m1$odds[1],2)`**,
+- con un intervalo de confianza AL 95% de `r round(m2$conf.low[1],2)` a `r round(m2$conf.high[1],2)`
+
+- $\beta_{estatura:baja}$
+- En la población, la **prevalencia** de tener depresión dado que se es de **estatura baja** es
+- **`r round(m1$odds[2],2)`** veces, 
+- el **prevalencia** de tener depresión dado que se es de **estatura alta**,
+- con un intervalo de confianza AL 95% de `r round(m2$conf.low[2],2)` a `r round(m2$conf.high[2],2)`.
+- Este resultado es estadísticamente significativo con un valor **p = `r round(m1$p.value[2],3)`**
 
 
-## Sobrevida
+## HR: Tiempo a evento
 
+### Log-Rank test
 
-## Cohortes
+```{r,echo=FALSE}
+coxdb <- riskdb %>% 
+  mutate(aids=as.integer(aids)-1)
+```
+
+```{r,fig.height=5,fig.width=7,echo=FALSE}
+fit <- survfit(Surv(ttoaidsorexit, aids) ~ ccr2, data =  coxdb)
+# Visualize with survminer
+ggsurvplot(fit, data = coxdb, risk.table = TRUE,
+           conf.int = T,ggtheme = theme_minimal(),pval = T)
+```
+
+## HR: Tiempo a evento
+
+### Regresión de Cox
+
+```{r}
+res.cox <- coxph(Surv(ttoaidsorexit, aids) ~ ccr2, data =  coxdb)
+```
+
+```{r,echo=FALSE}
+#res.cox %>% glance()
+m1 <- res.cox %>% tidy() %>% rownames_to_column()
+m2 <- res.cox %>% confint_tidy() %>% rownames_to_column()
+left_join(m1,m2) %>% select(-rowname)
+#res.cox %>% augment()
+```
+
+## IRR: Desenlaces conteo o tasas
+
+```{r,eval=FALSE}
+glm(response~predictor1+predictor2+predictor3+ ... + offset(log(population)),
+     family=poisson,data=...)
+#https://stats.stackexchange.com/questions/66791/where-does-the-offset-go-in-poisson-negative-binomial-regression/66878#66878
+#https://stackoverflow.com/questions/16046726/regression-for-a-rate-variable-in-r
+```
 
 
 ## Referencias
+
+### Presentaciones
+
+- Curso de Bioestadística. Maestría en Ciencias de la Investigación Epidemiológica. UPCH 2018.
+- José Alfredo Zavala. Regresión Lineal. 2018
+- Harold Akehurst. Bioestadística con R. Julio 2016
+
+### enlaces web
 
 - StatQuest: Linear Models Pt.1 - Linear Regression. Link: `https://youtu.be/nk2CQITm_eo`
 - Statistics for Biologist: Points of Significance. Link: `https://www.nature.com/collections/qghhqm/pointsofsignificance`
