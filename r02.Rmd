@@ -292,9 +292,6 @@ riskdb_or %>%
 ```
 
 ```{r}
-compareGroups(aids ~ ccr2,data = riskdb,byrow=T) %>% 
-  createTable(show.ratio = T)
-
 compareGroups(aids ~ ccr2 + ccr5 + sdf1 + race,data = riskdb,byrow=T) %>% 
   createTable(show.ratio = T)
 ```
@@ -308,6 +305,9 @@ riskdb %>%
          odds=Yes/No) %>% 
   mutate(pr=c(.$prev[1]/.$prev[2],NA),
          or=c(.$odds[1]/.$odds[2],NA))
+
+compareGroups(aids ~ ccr2,data = riskdb,byrow=T) %>% 
+  createTable(show.ratio = T)
 
 with(riskdb,table(ccr2,aids))
 
