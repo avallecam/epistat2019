@@ -4,6 +4,8 @@ notrack/
 figure/
 table/
 data-raw/
+data/
 *.Rproj.user
 *.Rproj
 .Rproj.user
+*.R

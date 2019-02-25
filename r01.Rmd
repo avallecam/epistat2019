@@ -167,7 +167,7 @@ $$ R^2 = \frac{Var(mean) - Var(fit)}{Var(mean)}  $$
 
 ```{r}
 wm1 <- lm(vef ~ edad, data = espir)
-wm1 %>% glance() %>% select(r.squared:df)
+wm1 %>% glance() %>% dplyr::select(r.squared:df)
 ```
 
 **INTERPRETACIÓN**
@@ -302,7 +302,7 @@ compareGroups(fumar ~ edad + vef + talla + sexo,
 
 ```{r,fig.height=2,fig.width=6,message=FALSE,error=FALSE,warning=FALSE}
 espir %>% 
-  select(edad,vef,talla) %>% 
+  dplyr::select(edad,vef,talla) %>% 
   gather(key,value) %>% 
   ggplot(aes(value)) +
   geom_histogram() +
@@ -328,7 +328,7 @@ epi_summary <- function(df, x) {
               kurtosis=moments::kurtosis(!!x_var,na.rm = T)
               ) #%>% 
     #mutate(var=enquo(x)) %>% 
-    #select(var,everything())
+    #dplyr::select(var,everything())
 }
 ```
 
@@ -355,7 +355,12 @@ epi_summary(espir,vef)
 - **estadístico**: emplear múltiples predictores
   + lineales, no-lineales, segmentadas
 
-```{r, fig.align='center',fig.width=6,fig.height=4,echo=FALSE,out.width =  '500px'}
+
+```{r,fig.cap="", out.width =  '500px',echo=FALSE}
+knitr::include_graphics("notrack/ggdag-epistat2019.png")
+```
+
+```{r, fig.align='center',fig.width=6,fig.height=4,echo=FALSE,out.width =  '500px',eval=FALSE}
 dagconf <- dagify(y ~ x,
        y ~ conf + x,
        x ~ conf,
@@ -383,7 +388,7 @@ espir %>%
 
 ```{r, echo=FALSE}
 wm1 <- lm(vef ~ edad + sexo, data = espir)
-wm1 %>% glance() %>% select(r.squared:df)
+wm1 %>% glance() %>% dplyr::select(r.squared:df)
 ```
 
 - **edad** y **sexo** _explica_ el **60%** de la variabilidad de **VEF**.
@@ -392,7 +397,7 @@ wm1 %>% glance() %>% select(r.squared:df)
 ```{r,echo=FALSE}
 m1 <- wm1 %>% tidy() %>% rownames_to_column()
 m2 <- wm1 %>% confint_tidy() %>% rownames_to_column()
-left_join(m1, m2) %>% select(-rowname)
+left_join(m1, m2) %>% dplyr::select(-rowname)
 ```
 
 - $\beta_{sex:female}$
@@ -441,6 +446,7 @@ wm1 %>% augment() %>%
   ggplot(aes(colour= sexo)) +
   geom_point(aes(edad,vef),alpha=0.05) +
   geom_line(aes(edad,.fitted), lwd=1.5)
+ggsave("notrack/multi-01.png")
 ```
 
 ## RLM: ejercicio
@@ -493,7 +499,7 @@ wm1 <- lm(vef ~ edad*fumar, data = espir)
 #wm1 %>% glance()
 m1 <- wm1 %>% tidy() %>% rownames_to_column()
 m2 <- wm1 %>% confint_tidy() %>% rownames_to_column()
-left_join(m1, m2) %>% select(term,estimate,conf.low,conf.high#,p.value
+left_join(m1, m2) %>% dplyr::select(term,estimate,conf.low,conf.high#,p.value
                              )
 ```
 
@@ -530,6 +536,8 @@ wm1 %>% augment() %>%
   ggplot(aes(colour=fumar)) + 
   geom_point(aes(edad,vef),alpha=0.05) +
   geom_line(aes(edad,.fitted), lwd=1.5)
+
+ggsave("notrack/multi-02.png")
 ```
 
 
