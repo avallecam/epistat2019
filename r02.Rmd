@@ -22,6 +22,7 @@ library(kableExtra)
 library(survival)
 library(survminer)
 library(epiR)
+library(epiDisplay)
 
 set.seed(33)
 
@@ -29,14 +30,34 @@ knitr::opts_chunk$set(echo = TRUE,message=FALSE,warning=FALSE, error=FALSE)
 theme_set(theme_bw())
 ```
 
+## Objetivo
+
+- Calcular e interpretar medidas de asociación empleadas en Estudios Epidemiológicos.
+
+### Objetivos Específicos
+
+- Conocer las caracaterísticas de R y Rstudio.
+
+- Importar y describir bases de datos.
+
+- Tomar decisiones epidemiológicas y estadísticas en base a la pregunta y tipo de estudio.
+
+## Preguntas de investigación de hoy
+
+1. ¿Cuántas veces es el odds de tener una enfermedad cardiovascular en personas obesas?
+
+2. ¿Cuántas veces es la prevalencia de hipercolesterolemia en personas con actividad física leve?
+
+3. ¿Cuántas veces es el riesgo de desarrollar SIDA dado que poseeo el polimorfismo SDF1(CXCR12)?
+
+4. ¿Las personas con el polimorfismo SDF1(CXCR12) viven más tiempo sin SIDA?
+
 ## Temario
 
-1. **Introducción** (5min)
-2. **Regresión Lineal** 
-    - Simple (30min)
-    - ejercicios (15min)
-    - Múltiple (20min)
-    - ejercicios (15min)
+1. **Introducción** (30min)
+    - ¿Por qué usar R?
+    - R y Rstudio
+    - Material de clase: RstudioCloud y archivos Rmarkdown.
 5. **Estudios observacionales** (25min)
     - TEMA: Encuesta 
     - Transversales
@@ -105,6 +126,15 @@ t1 %>%
 
 ## Bases de datos
 
+- Caso Control
+
+```{r}
+read_dta("data-raw/log23.dta") %>% 
+  as_factor() %>% 
+  mutate_if(is.numeric,as.factor) %>% 
+  summary()
+```
+
 - Cohorte
 
 ```{r}
@@ -127,8 +157,66 @@ levels(riskdb$ccr2)
 ```{r}
 logdb <- read_dta("data-raw/brfss2000.dta") %>% as_factor() %>% 
   filter(!is.na(depress))
-  #mutate(dn_cro=as.factor(dn_cro))
+
+logdb %>% 
+  count(depress) %>% 
+  mutate(perd=n/sum(n))
 ```
+
+```{r}
+chron <- read_dta("data-raw/chronic2.dta") %>% as_factor() %>% 
+  mutate(tcho2_n=as.numeric(tcho2),
+         tcho2_nn=if_else(tcho2 == "No",0,1))
+
+chron %>% glimpse()
+chron %>% count(tcho2)
+
+#no convergencia
+glm(tcho2 ~ age + sex + group + bmi_cat + diab + hba1c + ht + pa2 + smoke2 + alcohol2 + ndrug, 
+    data = chron, family = binomial(link = "log"))
+
+#alternativa: poisson
+glm(tcho2_n ~ age + sex + group + bmi_cat + diab + hba1c + ht + pa2 + smoke2 + alcohol2 + ndrug, 
+    data = chron, family = poisson(link = "log"))
+
+glm(tcho2_nn ~ age + sex + group + bmi_cat + diab + hba1c + ht + pa2 + smoke2 + alcohol2 + ndrug, 
+    data = chron, family = poisson(link = "log"))
+
+wm1 <- glm(tcho2_nn ~ 
+             age + sex + group + bmi_cat + diab + hba1c + ht + pa2 + smoke2 + alcohol2 + ndrug, 
+           data = chron, family = poisson(link = "log"))
+wm1 %>% tidy()
+wm1 %>% confint_tidy()
+
+cov.m1 <- sandwich::vcovHC(wm1, type="HC0")
+std.err <- sqrt(diag(cov.m1))
+r.est <- cbind(Estimate= coef(wm1), "Robust SE" = std.err,
+"Pr(>|z|)" = 2 * pnorm(abs(coef(wm1)/std.err), lower.tail=FALSE),
+LL = coef(wm1) - 1.96 * std.err,
+UL = coef(wm1) + 1.96 * std.err)
+
+r.est
+```
+
+```{r}
+#contexto:
+#y -> derpleu: derrame pleural en el último mes
+#x -> rx: tratamiento DPCA vs convencional
+#for poisson:
+# - y must be numeric
+# - be sure that is coded as 0 or 1 if outcome is dicotomic.
+noconv <- read_dta("data-raw/noconveregence.dta") %>% as_factor() %>% 
+  mutate(derpleu1_n=as.numeric(derpleu1),
+         derpleu1_nn=if_else(derpleu1 == "No",0,1))
+
+noconv %>% glimpse()
+noconv %>% count(derpleu1,derpleu1_n,derpleu1_nn)
+
+glm(derpleu1 ~ rx + sex + age5 + asictes + hepatom + spiders_ + edema_ + ln_bilirubin + ln_albumin + histol_, 
+    data = noconv, family = binomial(link = "log"))
+
+```
+
 
 ## Cohorte
 
@@ -313,6 +401,13 @@ with(riskdb,table(ccr2,aids))
 
 epi.2by2(with(riskdb,table(ccr2,aids)),
          method = "cross.sectional")
+```
+
+```{r}
+data(Oswego)
+Oswego %>% as_tibble() %>% count(ill,chocolate)
+cc(Oswego$ill,Oswego$chocolate) #case-control
+cs(Oswego$ill,Oswego$chocolate) #cross-sectional
 ```
 
 
@@ -511,6 +606,7 @@ glm(response~predictor1+predictor2+predictor3+ ... + offset(log(population)),
 
 - StatQuest: Linear Models Pt.1 - Linear Regression. Link: `https://youtu.be/nk2CQITm_eo`
 - Statistics for Biologist: Points of Significance. Link: `https://www.nature.com/collections/qghhqm/pointsofsignificance`
+- Association of gene polymorphism of SDF1(CXCR12) with susceptibility to HIV-1 infection and AIDS disease progression: A meta-analysis. PLoS One. 2018 Feb 8. `https://www.ncbi.nlm.nih.gov/pubmed/29420545`
 
 
 ```{r cars, eval=FALSE, echo=FALSE}
