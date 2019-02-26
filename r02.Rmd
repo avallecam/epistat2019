@@ -8,7 +8,7 @@ output:
     smaller: true
     #incremental: true
     transition: faster
-    df_print: kable
+    df_print: default
     #logo: "notrack/logo_emerge.png"
 ---
 
@@ -30,6 +30,8 @@ set.seed(33)
 
 knitr::opts_chunk$set(echo = TRUE,message=FALSE,warning=FALSE, error=FALSE)
 theme_set(theme_bw())
+
+options(width = 120)
 ```
 
 
@@ -80,7 +82,7 @@ read_dta("data-raw/chronic2.dta") %>% as_factor() %>%
 
 1. **Introducción** (30min)
     - Objetivos
-    - Material de clase: RstudioCloud y archivos Rmarkdown.
+    - Material de clase: Archivos R y Rmarkdown.
     
 2. **Estudios observacionales** (85min)
     - Caso-Control, Cohorte, Tiempo a evento
@@ -111,14 +113,37 @@ read_dta("data-raw/chronic2.dta") %>% as_factor() %>%
 
 - Tomar decisiones epidemiológicas y estadísticas en base a la pregunta y tipo de estudio.
 
-## Material de clase
+## Material de clase (1/3)
 
 - **R**: Software Libre para el manejo, visualización y análisis de datos.
 - **RStudio**: ambiente de desarrollo integrado (IDE).
 - **Paquete**: Conjunto de funciones.
 - **Función**: Código capaz de resolver un problema específico con datos.
-- Archivo **.R**: Documento en _texto plano_ con funciones para resolver un problema de análisis amplio.
-- Archivo **.Rmd**: Documento en _texto plano_ que integra texto, funciones y resultados. 
+
+```{r,fig.cap="", out.width =  '800px',echo=FALSE,fig.align='center'}
+knitr::include_graphics("notrack/tidy-02.PNG")
+```
+
+## Material de clase (2/3)
+
+- **R**: Software Libre para el manejo, visualización y análisis de datos.
+- **RStudio**: ambiente de desarrollo integrado (IDE).
+- **Paquete**: Conjunto de funciones.
+- **Función**: Código capaz de resolver un problema específico con datos.
+
+```{r,fig.cap="", out.width =  '800px',echo=FALSE,fig.align='center'}
+knitr::include_graphics("notrack/tidy-01.PNG")
+```
+
+## Material de clase (3/3)
+
+- Archivo **.R**: Documento en _texto plano_ con **funciones** para resolver un problema de análisis amplio.
+- Archivo **.Rmd**: Documento en _texto plano_ que integra **texto, funciones y resultados**.
+
+```{r,fig.cap="", out.width =  '750px',echo=FALSE,fig.align='center'}
+knitr::include_graphics("notrack/repro-01.PNG")
+```
+
 
 ```{r,echo=FALSE}
 aidsdb <- read_dta("data/aidsdb.dta") %>% as_factor()
@@ -131,13 +156,11 @@ aidsdb <- read_dta("data/aidsdb.dta") %>% as_factor()
   + resultado (**caso** o control)
 
 - El tipo de análisis depende del tipo de estudio:
-  + _"Reclutamos $x_1$ sujetos **caso** y $x_2$ sujetos **control**"_
-  + Tipo **Caso-Control**
+  + _"Reclutamos $x_1$ sujetos **caso** y $x_2$ sujetos **control**"_ -> Tipo **Caso-Control**
   
-  + _"Reclutamos $x_1$ sujetos **expuestos** y $x_2$ sujetos **no expuestos**"_
-  + Tipo **Cohorte**
+  + _"Reclutamos $x_1$ sujetos **expuestos** y $x_2$ sujetos **no expuestos**"_ -> Tipo **Cohorte**
 
-```{r,fig.cap="", out.width =  '500px',echo=FALSE}
+```{r,fig.cap="", out.width =  '800px',echo=FALSE,fig.align='center'}
 knitr::include_graphics("notrack/epi-10.png")
 ```
 
@@ -194,7 +217,7 @@ knitr::include_graphics("notrack/epi-02.png")
 ```
 
 
-## 1.2 Preguntas de investigación
+## 1.2 Pregunta de investigación
 
 **En personas VIH+ ¿el polimorfismo CCR5(Delta-32) está *asociado* con el desarrollo del SIDA?**
 
@@ -204,12 +227,15 @@ knitr::include_graphics("notrack/epi-02.png")
 
 ```{r}
 aidsdb_or <- read_dta("data/aidsdb.dta") %>% as_factor() %>% 
-  group_by(aids) %>% 
-  sample_n(150) %>% 
-  ungroup()
+  group_by(aids) %>% sample_n(150) %>% ungroup()
 ```
 
-> Simularemos un escenario Caso-Control: muestreo al azar de **150 casos y 150 controles**
+- Simularemos un escenario Caso-Control: muestreo al azar de **150 casos y 150 controles**
+
+```{r,echo=FALSE}
+aidsdb_or %>% glimpse()
+```
+
 
 ## 1.3 Estimar e interpretar OR (1)
 
@@ -229,24 +255,28 @@ aidsdb_or %>%
   mutate(or=c(.$odds[1]/.$odds[2],NA))
 ```
 
-```{r}
-compareGroups(aids ~ ccr5,data = aidsdb_or,byrow=F) %>% 
-  createTable(show.ratio = T)
+```{r,out.width = '200%'}
+epi.2by2(with(aidsdb_or,table(ccr5,aids)),
+         method = "case.control")
 ```
+
+## 1.3 Estimar e interpretar OR (2)
 
 $$OR = \frac{ {Odds}_{(Y: AIDS | CCR5:Yes)} }{ {Odds}_{(Y: AIDS | CCR5:No)} }$$
 
 - En la población, el **odds** de tener sida dado que **sí poseen CCR5** es
-- **1.39** veces, 
+- **1.28** veces, 
 - el **odds** de tener sida dado que **no poseen CCR5**,
-- con un intervalo de confianza al 95% de 0.76 a 2.58.
-- Este resultado no es estadísticamente significativo con un valor **p = 0.356**
+- con un intervalo de confianza al 95% de 0.73 a 2.27.
+- Este resultado no es estadísticamente significativo con un valor **p = 0.386**
 
-## 1.3 Estimar e interpretar OR (2)
+## 1.3 Estimar e interpretar OR (3)
 
 ```{r}
-epi.2by2(with(aidsdb_or,table(ccr5,aids)),
-         method = "case.control")
+aidsdb_or_no <- aidsdb_or %>% mutate_if(is.factor,fct_relevel, ... = "No")
+
+compareGroups(aids ~ ccr5 + race,data = aidsdb_or_no,byrow=T) %>% 
+  createTable(show.ratio = T)
 
 #cc(aidsdb_or$aids,aidsdb_or$ccr5,graph = F)
 ```
@@ -275,7 +305,7 @@ epi.2by2(with(aidsdb_or,table(_____,aids)),
 
 - El investigador puede elegir el total de **expuestos y no expuestos**
 
-```{r,echo=FALSE}
+```{r,echo=FALSE, eval=TRUE}
 aidsdb %>% 
   count(ccr5,aids) %>% 
   spread(aids,n) %>% 
@@ -295,7 +325,7 @@ aidsdb %>%
   mutate(rr=c(.$risk[1]/.$risk[2],NA))
 ```
 
-```{r,fig.cap="", out.width =  '500px',echo=FALSE}
+```{r,fig.cap="", out.width =  '450px',echo=FALSE}
 knitr::include_graphics("notrack/epi-01.png")
 ```
 
@@ -311,6 +341,10 @@ knitr::include_graphics("notrack/epi-01.png")
 aidsdb <- read_dta("data/aidsdb.dta") %>% as_factor()
 ```
 
+```{r,echo=FALSE}
+aidsdb %>% glimpse()
+```
+
 ## 2.3 Estimar e interpretar RR (1)
 
 ```{r,eval=FALSE,echo=FALSE}
@@ -323,6 +357,8 @@ epi.2by2(with(aidsdb,table(ccr5,aids)),
          method = "cohort.count")
 ```
 
+## 2.3 Estimar e interpretar RR (2)
+
 $$RR = \frac{ {Risk}_{(Y: AIDS | CCR5:Yes)} }{ {Risk}_{(Y: AIDS | CCR5:No)} }$$
 
 - En la población, el **riesgo** de tener sida dado que **sí poseen CCR5** es
@@ -331,11 +367,15 @@ $$RR = \frac{ {Risk}_{(Y: AIDS | CCR5:Yes)} }{ {Risk}_{(Y: AIDS | CCR5:No)} }$$
 - con un intervalo de confianza al 95% de 0.82 a 1.45.
 - Este resultado no es estadísticamente significativo con un valor **p = 0.378**
 
+## 2.3 Estimar e interpretar RR (2)
+
 ```{r}
 #compareGroups(aids ~ ccr5,data = aidsdb,byrow=T) %>% 
 #  createTable(show.ratio = T)
 
-#cs(aidsdb$aids,aidsdb$ccr5)
+aidsdb_no <- aidsdb %>% mutate_if(is.factor,fct_relevel, ... = "No")
+
+cs(aidsdb_no$aids,aidsdb_no$ccr5)
 ```
 
 ## 2.4 **Tu turno 2**
@@ -352,7 +392,7 @@ epi.2by2(with(aidsdb,table(_____,aids)),
 
 - **Interpretacíón:**
 
-## 3.1 Tiempo a evento  {.columns-2}
+## 3.1 Tiempo a evento (1)  {.columns-2}
 
 ```{r,fig.cap="", out.width =  '500px',echo=FALSE}
 knitr::include_graphics("notrack/epi-03.png")
@@ -362,13 +402,15 @@ knitr::include_graphics("notrack/epi-03.png")
 knitr::include_graphics("notrack/epi-04.png")
 ```
 
-## 3.1 Tiempo a evento  {.columns-2}
+## 3.1 Tiempo a evento (2)
 
-```{r,fig.cap="", out.width =  '500px',echo=FALSE}
+```{r,fig.cap="", out.width =  '900px',echo=FALSE,fig.align='center'}
 knitr::include_graphics("notrack/epi-05.png")
 ```
 
-```{r,fig.cap="", out.width =  '500px',echo=FALSE}
+## 3.1 Tiempo a evento (3)
+
+```{r,fig.cap="", out.width =  '700px',echo=FALSE,fig.align='center'}
 knitr::include_graphics("notrack/epi-06.png")
 ```
 
@@ -386,7 +428,11 @@ coxdb <- read_dta("data/aidsdb.dta") %>% as_factor() %>%
   mutate(aids=as.integer(aids)-1)
 ```
 
-## 3.3 Gererar tabla e interpretar
+```{r,echo=FALSE}
+coxdb %>% glimpse()
+```
+
+## 3.3 Gererar tabla Kaplan Meier
 
 ```{r}
 fit <- survfit(Surv(ttoaidsorexit, aids) ~ ccr5, data =  coxdb)
@@ -398,13 +444,19 @@ fit %>% broom::tidy() #revisa el estrato!
 #(1-(1/84)) * (1-(1/81))
 ```
 
-## 3.3 Gererar gráfico e interpretar
+## 3.3 Gererar gráfico e interpretar (1)
 
-```{r,fig.height=4,fig.width=7,echo=FALSE}
+```{r,fig.height=5,fig.width=8,echo=FALSE,fig.align='center'}
 # Visualize with survminer
 ggsurvplot(fit, data = coxdb, risk.table = TRUE,
            conf.int = T,ggtheme = theme_bw(),#ggtheme = theme_minimal(),
            pval = T,censor=FALSE,tables.theme = theme_cleantable())
+```
+
+## 3.3 Gererar gráfico e interpretar (2)
+
+```{r}
+survdiff(Surv(ttoaidsorexit, aids) ~ ccr5, data =  coxdb)
 ```
 
 - **Interpretación**
@@ -420,10 +472,12 @@ ggsurvplot(fit, data = coxdb, risk.table = TRUE,
 **En personas VIH+ ¿el polimorfismo SDF1(CXCR12) o CCR2 contribuyen con un mayor *tiempo* al inicio del SIDA?**
 
 
-```{r,fig.height=5,fig.width=7,echo=FALSE,eval=FALSE}
+```{r,fig.height=5,fig.width=7,eval=FALSE}
 fit <- survfit(Surv(ttoaidsorexit, aids) ~ ____, data =  coxdb)
 
 fit %>% broom::tidy() #revisa el estrato!
+
+survdiff(Surv(ttoaidsorexit, aids) ~ _____, data =  coxdb)
 
 ggsurvplot(fit, data = coxdb, risk.table = TRUE,
            conf.int = T,ggtheme = theme_bw(),#ggtheme = theme_minimal(),
@@ -443,13 +497,13 @@ ggsurvplot(fit, data = coxdb, risk.table = TRUE,
 
 ### objetivo
 
-- **epidemiológico**: controlar **confusión** en el análisis.
+- **Epidemiológico**: controlar **confusión** en el análisis.
   + estandarización (directa/indirecta), 
   + estratificación, 
   + puntajes de propensión, 
   + regresión _multivariable_
 
-- **estadístico**: emplear múltiples predictores
+- **Estadístico**: emplear **múltiples predictores**
   + lineales, no-lineales, segmentadas
 
 ```{r,fig.cap="", out.width =  '500px',echo=FALSE}
@@ -480,93 +534,14 @@ knitr::include_graphics("notrack/multi-01.png")
 knitr::include_graphics("notrack/multi-02.png")
 ```
 
-## Preguntas de investigación (5)
-
-```{r}
-depres <- read_sav("data/depres.sav") %>% as_factor()
-cronic <- read_rds("data/cronic.rds")
-cardio <- read_dta("data/cardio.dta") %>% as_factor()
-cardio <- read_xlsx("data/cardio.xlsx") %>% 
-  #mutate_all(as.numeric)
-  mutate_at(.vars = c("edad","colesterol"),.funs = as.numeric) %>% 
-  mutate_if(is.character,as.factor)
-```
-
-En adultos ¿la obesidad está *asociada* con la enfermedad cardiovascular? (cardio)
-
-1. En adultos ¿la depresión está **asociada** con el evento cerebrovascular? (depres)
-
-1. En adultos ¿la actividad física está **asociada** con la hipercolesterolemia? (cronic)
-
-<!--cardio: caso-control x múltiple n=60 -->
-<!--depress: prevalencia 8% ¿PR u OR? -->
-<!--cronic: prevalencia 30% ¿Binomial o Poisson? -->
-
-```{r,eval=FALSE}
-#no convergencia
-glm(tcho2 ~ age + sex + group + bmi_cat + diab + hba1c + ht + pa2 + smoke2 + alcohol2 + ndrug, 
-    data = cronic, family = binomial(link = "log"))
-
-#alternativa: poisson
-glm(tcho2_n ~ age + sex + group + bmi_cat + diab + hba1c + ht + pa2 + smoke2 + alcohol2 + ndrug, 
-    data = cronic, family = poisson(link = "log"))
-
-glm(tcho2_nn ~ age + sex + group + bmi_cat + diab + hba1c + ht + pa2 + smoke2 + alcohol2 + ndrug, 
-    data = cronic, family = poisson(link = "log"))
-
-wm1 <- glm(tcho2_nn ~ 
-             age + sex + group + bmi_cat + diab + hba1c + ht + pa2 + smoke2 + alcohol2 + ndrug, 
-           data = cronic, family = poisson(link = "log"))
-wm1 %>% tidy()
-wm1 %>% confint_tidy()
-
-cov.m1 <- sandwich::vcovHC(wm1, type="HC0")
-std.err <- sqrt(diag(cov.m1))
-r.est <- cbind(Estimate= coef(wm1), "Robust SE" = std.err,
-"Pr(>|z|)" = 2 * pnorm(abs(coef(wm1)/std.err), lower.tail=FALSE),
-LL = coef(wm1) - 1.96 * std.err,
-UL = coef(wm1) + 1.96 * std.err)
-
-r.est
-```
-
-## Modelos Lineales Generalizados
-
-### careacterística
-
-### objetivo
-
-## GLM: familias distribución y funciones de enlace
-
-- tabla
-
-```{r,eval=FALSE,echo=FALSE}
-#flujo de decisiones antes de optar por una distribución y una función en específico
-#- tipo de estudio
-#- prevalencia
-#- no converge? cambiar de familia
-# 
-```
-
 
 ## GLM: verosimilitud
 
-
-```{r, echo=FALSE, fig.cap="", out.width = '40%'}
+```{r, echo=FALSE, fig.cap="", out.width = '40%',fig.align='center'}
 knitr::include_graphics("notrack/nmeth.3904-F3_A.jpg")
 ```
 
-## GLM: Regresión Logística {.columns-2}
-
-- Se aplica cuando el desenlace es **categórico dicotómico**
-
-- El término logístico refiere a la función de enlace **logit**, que convierte el resultado binario en una variable contínua de log(odds)
-
-$$ log\left(\frac{\pi}{1-\pi}\right) =  \beta_0 + \beta_1 X_1 + . . . + \beta_n X_n + \epsilon $$
-
-- El valor exponenciado de los coeficientes se pueden interpretar como **Odds Ratio (OR)**
-
-```{r,fig.height=2,fig.width=3}
+```{r,fig.height=2,fig.width=3,eval=FALSE}
 data_frame(p=seq(0,1,0.01)) %>% 
   mutate(odd=p/(1-p)) %>% 
   ggplot(aes(p,log(odd))) +
@@ -582,72 +557,49 @@ data_frame(p=seq(0,1,0.01)) %>%
   coord_flip()
 ```
 
-## OR: Caso-Control {.columns-2}
 
-- Simularemos un escenario Caso-Control
-- Seleccionaremos al azar **500 casos y 500 controles**
+```{r,eval=FALSE,echo=FALSE}
+
+## GLM: familias distribución y funciones de enlace (1)
+
+# tabla ?
+
+#flujo de decisiones antes de optar por una distribución y una función en específico
+#- tipo de estudio
+#- prevalencia
+#- no converge? cambiar de familia
+# 
+```
+
+## 4.1 Caso-Control
+
+- **OR:** **familia:** binomial, **link:** logit
+
+$$ OR \Longrightarrow logit(\pi) = log(odds)  = log\left(\frac{\pi}{1-\pi}\right) = Y = \beta_0 + \beta_1 X_1 + . . . + \beta_n X_n + \epsilon \enspace ; \enspace y \sim Binomial $$
+
+- El valor exponenciado de los coeficientes se pueden interpretar como **Odds Ratio (OR)**
+
+$$ Y = \beta_0 + \beta_1 X_1 \\ \begin{cases} log(odds_2) = \beta_0 + \beta_1(1) \\ log(odds_1) = \beta_0 + \beta_1(0) \end{cases} \\ log(odds_2) - log(odds_1) = \beta_1 \\ log \left(\frac{odds_2}{odds_1}\right)  = \beta_1 \\ OR = exp(\beta_1) $$
+
+## 4.2 Pregunta de investigación
+
+
+**En personas VIH+, ajustando por raza ¿el polimorfismo CCR5 está *asociado* con el desarrollo del SIDA?**
+
+- base: `aidsdb.dta`
+- covariable: `race`
+- exposición: `ccr5`
+- desenlace: `aids`
+
+```{r,echo=FALSE}
+aidsdb_or %>% glimpse()
+```
+
+
+## 4.3 Interpretar variables categóricas 
 
 ```{r}
-aidsdb_or <- aidsdb %>% 
-  group_by(aids) %>% 
-  sample_n(50) %>% 
-  ungroup()
-```
-
-```{r,fig.height=2,fig.width=3, echo=TRUE}
-aidsdb_or %>% ggplot(aes(aids,fill=ccr2)) +
-  geom_bar(position = "fill")
-```
-
-```{r}
-aidsdb_or %>% 
-  count(aids) %>% 
-  mutate(prc=n/sum(n))
-```
-
-```{r, echo=FALSE}
-aidsdb_or %>% 
-  count(ccr2,aids) %>% 
-  spread(aids,n) %>% 
-  mutate(odds=Yes/No) %>% 
-  mutate(or=c(NA_real_,.$odds[2]/.$odds[1]))
-```
-
-```{r}
-compareGroups(aids ~ ccr2 + ccr5 + sdf1 + race,data = aidsdb,byrow=T) %>% 
-  createTable(show.ratio = T)
-```
-
-```{r}
-aidsdb %>% 
-  count(ccr2,aids) %>% 
-  spread(aids,n) %>% 
-  mutate(Yes=Yes,
-         prev=Yes/(No+Yes),
-         odds=Yes/No) %>% 
-  mutate(pr=c(.$prev[1]/.$prev[2],NA),
-         or=c(.$odds[1]/.$odds[2],NA))
-
-compareGroups(aids ~ ccr2,data = aidsdb,byrow=T) %>% 
-  createTable(show.ratio = T)
-
-with(aidsdb,table(ccr2,aids))
-
-epi.2by2(with(aidsdb,table(ccr2,aids)),
-         method = "cross.sectional")
-```
-
-```{r}
-data(Oswego)
-Oswego %>% as_tibble() %>% count(ill,chocolate)
-cc(Oswego$ill,Oswego$chocolate) #case-control
-cs(Oswego$ill,Oswego$chocolate) #cross-sectional
-```
-
-## OR: coeficientes de variables categóricas
-
-```{r}
-wm1 <- glm(aids ~ ccr2, data = aidsdb_or, family = binomial(link = "logit"))
+wm1 <- glm(aids ~ ccr5 + race, data = aidsdb_or_no, family = binomial(link = "logit"))
 ```
 
 ```{r,echo=FALSE}
@@ -658,20 +610,20 @@ left_join(m1,m2) %>% dplyr::select(term,log.or=estimate,or,conf.low,conf.high,p.
 ```
 
 - $\beta_0$
-- En la población, el **odds** de tener sida dado que **no poseen CCR2** es **`r round(m1$or[1],2)`**,
-- con un intervalo de confianza al 95% de `r round(m2$conf.low[1],2)` a `r round(m2$conf.high[1],2)`
+- En la población, el **odds** de tener sida dado que **no poseen CCR5** es **`r round(m1$or[1],2)`**,
+- con un intervalo de confianza al 95% de `r round(m2$conf.low[1],2)` a `r round(m2$conf.high[1],2)`, **ajustando por** raza.
 
 - $\beta_{CCR2:Yes}$
-- En la población, el **odds** de tener sida dado que **sí poseen CCR2** es
+- En la población, el **odds** de tener sida dado que **sí poseen CCR5** es
 - **`r round(m1$or[2],2)`** veces, 
-- el **odds** de tener depresión dado que **no poseen CCR2**,
-- con un intervalo de confianza al 95% de `r round(m2$conf.low[2],2)` a `r round(m2$conf.high[2],2)`.
+- el **odds** de tener depresión dado que **no poseen CCR5**,
+- con un intervalo de confianza al 95% de `r round(m2$conf.low[2],2)` a `r round(m2$conf.high[2],2)`, **ajustando por** raza.
 - Este resultado no es estadísticamente significativo con un valor **p = `r round(m1$p.value[2],3)`**
 
-## OR: coeficientes de variables contínuas 
+## 4.3 interpretar variables contínuas 
 
 ```{r}
-wm1 <- glm(aids ~ age, data = aidsdb_or, family = binomial(link = "logit"))
+wm1 <- glm(aids ~ ccr5 + age, data = aidsdb_or_no, family = binomial(link = "logit"))
 ```
 
 ```{r,echo=FALSE}
@@ -683,63 +635,102 @@ left_join(m1,m2) %>% dplyr::select(term,log.or=estimate,or,conf.low,conf.high,p.
 
 - $\beta_{edad}$
 - En la población, por cada incremento en un año de **edad**,
-- el **odds** de sida _cambia_ en **`r round(m1$or[2],2)`**, con un intervalo de confianza AL 95% de `r round(m2$conf.low[2],2)` a `r round(m2$conf.high[2],2)`.
+- el **odds** de sida _cambia_ en **`r round(m1$or[2],2)`**, con un intervalo de confianza AL 95% de `r round(m2$conf.low[2],2)` a `r round(m2$conf.high[2],2)`,
+- **ajustando por** presencia de CCR5.
 - Este resultado no es estadísticamente significativo con un valor **p = `r round(m1$p.value[2],3)`**
  
 ```{r,fig.height=3,fig.width=3, echo=FALSE, eval=FALSE}
-## OR: supuesto
-wm1 %>% 
-  augment() %>% 
-  ggplot() +
-  geom_qq(aes(sample=.std.resid)) + 
-  geom_qq_line(aes(sample=.std.resid))
-
-#**META:** todos los puntos sobre la línea
+wm1 %>% augment()
 ```
 
-```{r,fig.height=3,fig.width=3,eval=FALSE, echo=FALSE}
-wm1 %>% augment() %>% 
-  ggplot(aes(.std.resid)) +
-  geom_histogram()
-  #geom_density()
-```
+## 4.4 **Tu turno 4**
 
-```{r,fig.height=3,fig.width=3,message=FALSE,error=FALSE, echo=FALSE,eval=FALSE}
-wm1 %>% 
-  augment() %>% 
-  ggplot(aes(age,.std.resid)) +
-  geom_point() +
-  geom_smooth() +
-  geom_hline(yintercept = c(0))
-#- **META:** distribución idéntica a ambos lados de la línea
-```
+**En adultos ¿la obesidad está *asociada* con la enfermedad cardiovascular?**
 
-## RR: Cohorte
+- usar base: cardio
 
 ```{r}
-wm1 <- glm(aids ~ ccr2, data = aidsdb, family = binomial(link = "log"))
+cardio <- read_dta("data/cardio.dta") %>% as_factor()
+```
+
+```{r,eval=FALSE,echo=FALSE}
+cardio <- read_xlsx("data/cardio.xlsx") %>% 
+  #mutate_all(as.numeric)
+  mutate_at(.vars = c("edad","colesterol"),.funs = as.numeric) %>% 
+  mutate_if(is.character,as.factor)
+```
+
+
+## 5.1 Cohorte
+
+- **RR o PR:** **familia:** binomial, **link:** log
+
+$$ RR \Longrightarrow log(\pi) = log(\pi) =  \beta_0 + \beta_1 X_1 + . . . + \beta_n X_n + \epsilon \enspace ; \enspace y \sim Binomial $$
+
+- El valor exponenciado de los coeficientes se pueden interpretar como **Risk Ratio (RR)**
+
+$$ Y = \beta_0 + \beta_1 X_1 \\ \begin{cases} log(p_2) = \beta_0 + \beta_1(1) \\ log(p_1) = \beta_0 + \beta_1(0) \end{cases} \\ log(p_2) - log(p_1) = \beta_1 \\ log \left(\frac{p_2}{p_1}\right)  = \beta_1 \\ RR = exp(\beta_1) $$
+
+
+## 5.2 Pregunta de investigación
+
+**En personas VIH+, ajustando por raza, ¿el polimorfismo CCR5(Delta-32) *protege* contra el desarrollo del SIDA?**
+
+- base: `aidsdb.dta`
+- covariable: `race`
+- exposición: `ccr5`
+- desenlace: `aids`
+
+```{r,echo=FALSE}
+aidsdb %>% glimpse()
+```
+
+
+## 5.3 Interpretar coeficientes
+
+```{r}
+wm1 <- glm(aids ~ ccr5 + race, data = aidsdb, family = binomial(link = "log"))
 ```
 
 ```{r,echo=FALSE}
 #wm1 %>% glance()
-m1 <- wm1 %>% tidy() %>% mutate(or=exp(estimate)) %>% rownames_to_column()
+m1 <- wm1 %>% tidy() %>% mutate(rr=exp(estimate)) %>% rownames_to_column()
 m2 <- wm1 %>% confint_tidy() %>% mutate_all(funs(exp)) %>% rownames_to_column()
-left_join(m1,m2) %>% dplyr::select(term,log.or=estimate,or,conf.low,conf.high,p.value)
+left_join(m1,m2) %>% dplyr::select(term,log.rr=estimate,rr,conf.low,conf.high,p.value)
 ```
 
 - $\beta_0$
-- En la población, el **riesgo** de sida dado que **no poseen CCR2** es **`r round(m1$or[1],2)`**,
-- con un intervalo de confianza AL 95% de `r round(m2$conf.low[1],2)` a `r round(m2$conf.high[1],2)`
+- En la población, el **riesgo** de sida dado que **no poseen CCR2** es **`r round(m1$rr[1],2)`**,
+- con un intervalo de confianza AL 95% de `r round(m2$conf.low[1],2)` a `r round(m2$conf.high[1],2)`, **ajustando por** raza.
 
-- $\beta_{ccr2:yes}$
+- $\beta_{ccr5:yes}$
 - En la población, el **riesgo** de tener sida dado que **sí poseen CCR2** es
-- **`r round(m1$or[2],2)`** veces, 
+- **`r round(m1$rr[2],2)`** veces, 
 - el **riesgo** de tener sida dado que **no poseen CCR2**,
-- con un intervalo de confianza AL 95% de `r round(m2$conf.low[2],2)` a `r round(m2$conf.high[2],2)`.
+- con un intervalo de confianza AL 95% de `r round(m2$conf.low[2],2)` a `r round(m2$conf.high[2],2)`, **ajustando por** raza.
 - Este resultado no es estadísticamente significativo con un valor **p = `r round(m1$p.value[2],3)`**
 
+## 5.4 **Tu turno 5**
 
-## PR: Transversal
+**En personas VIH+, ajustando por raza, CCR2, SDF1 y edad, ¿el polimorfismo CCR5(Delta-32) *protege* contra el desarrollo del SIDA?**
+
+- base: `aidsdb.dta`
+- covariable: `race`
+- covariable: `ccr2`
+- covariable: `sdf1`
+- covariable: `age`
+- exposición: `ccr5`
+- desenlace: `aids`
+
+- **interpretar** edad.
+
+## Transversales
+
+**En adultos ¿la baja estatura está *asociada* con la depresión?**
+
+```{r}
+depres <- read_sav("data/depres.sav") %>% as_factor()
+```
 
 ```{r}
 wm1 <- glm(depress ~ short, data = depres, family = binomial(link = "log"))
@@ -747,41 +738,114 @@ wm1 <- glm(depress ~ short, data = depres, family = binomial(link = "log"))
 
 ```{r,echo=FALSE}
 #wm1 %>% glance()
+m1 <- wm1 %>% tidy() %>% mutate(pr=exp(estimate)) %>% rownames_to_column()
+m2 <- wm1 %>% confint_tidy() %>% mutate_all(funs(exp)) %>% rownames_to_column()
+left_join(m1,m2) %>% dplyr::select(term,log.pr=estimate,pr,conf.low,conf.high,p.value)
+```
+
+- $\beta_{estatura:baja}$
+- En la población, la **prevalencia** de tener depresión dado que se es de **estatura baja** es **`r round(m1$pr[2],2)`** veces, 
+- el **prevalencia** de tener depresión dado que se es de **estatura alta**,
+- con un intervalo de confianza AL 95% de `r round(m2$conf.low[2],2)` a `r round(m2$conf.high[2],2)`.
+- Este resultado es estadísticamente significativo con un valor **p = `r round(m1$p.value[2],3)`**
+
+## 6.1 Situación 1: prevalencia < 10%
+
+**En adultos ¿la depresión está *asociada* con el evento cerebrovascular?**
+
+- base: `depress.sav`
+- exposición: `depress`
+- desenlace: `cvd`
+- prevalencia del desenlace: **8.96%**
+
+```{r}
+depres %>% count(cvd) %>% mutate(prev=n/sum(n))
+```
+
+
+## 6.1 Situación 1: prevalencia < 10%
+
+**En adultos ¿la depresión está *asociada* con el evento cerebrovascular?**
+
+
+```{r}
+wm1 <- glm(cvd ~ depress, data = depres, family = binomial(link = "log"))
+```
+
+```{r,echo=FALSE}
+#wm1 %>% glance()
 m1 <- wm1 %>% tidy() %>% mutate(or=exp(estimate)) %>% rownames_to_column()
 m2 <- wm1 %>% confint_tidy() %>% mutate_all(funs(exp)) %>% rownames_to_column()
 left_join(m1,m2) %>% dplyr::select(term,log.or=estimate,or,conf.low,conf.high,p.value)
 ```
 
-- $\beta_0$
-- En la población, la **prevalencia** de depresión en sujetos que **estatura alta** es **`r round(m1$or[1],2)`**,
-- con un intervalo de confianza AL 95% de `r round(m2$conf.low[1],2)` a `r round(m2$conf.high[1],2)`
 
-- $\beta_{estatura:baja}$
-- En la población, la **prevalencia** de tener depresión dado que se es de **estatura baja** es
-- **`r round(m1$or[2],2)`** veces, 
-- el **prevalencia** de tener depresión dado que se es de **estatura alta**,
-- con un intervalo de confianza AL 95% de `r round(m2$conf.low[2],2)` a `r round(m2$conf.high[2],2)`.
-- Este resultado es estadísticamente significativo con un valor **p = `r round(m1$p.value[2],3)`**
-
-
-
-## Tiempo a evento: Regresión de Cox (HR)
-
-- evaluar supuestos!
-
-```{r,eval=FALSE}
-#referencia:
-#http://www.sthda.com/english/wiki/cox-proportional-hazards-model
-
-res.cox <- coxph(Surv(ttoaidsorexit, aids) ~ ccr5, data =  coxdb)
-
-#res.cox %>% glance()
-m1 <- res.cox %>% tidy() %>% rownames_to_column()
-m2 <- res.cox %>% confint_tidy() %>% rownames_to_column()
-left_join(m1,m2) %>% dplyr::select(-rowname)
-#res.cox %>% augment()
+```{r}
+wm1 <- glm(cvd ~ depress, data = depres, family = binomial(link = "logit"))
 ```
 
+```{r,echo=FALSE}
+#wm1 %>% glance()
+m1 <- wm1 %>% tidy() %>% mutate(pr=exp(estimate)) %>% rownames_to_column()
+m2 <- wm1 %>% confint_tidy() %>% mutate_all(funs(exp)) %>% rownames_to_column()
+left_join(m1,m2) %>% dplyr::select(term,log.pr=estimate,pr,conf.low,conf.high,p.value)
+```
+
+
+## 6.2 Situación 2: no convergencia 
+
+**En adultos ¿la actividad física está *asociada* con la hipercolesterolemia?**
+
+```{r}
+cronic <- read_rds("data/cronic.rds")
+```
+
+```{r}
+cronic %>% count(tcho2,tcho2_n,tcho2_nn) %>% mutate(prev=n/sum(n))
+```
+
+```{r,error=TRUE}
+#no convergencia
+glm(tcho2 ~ age + sex + group + bmi_cat + diab + hba1c + ht + pa2 + smoke2 + alcohol2 + ndrug, 
+    data = cronic, family = binomial(link = "log"))
+```
+
+## 6.2 Situación 2: no convergencia 
+
+```{r}
+#alternativa: poisson
+wm1 <- glm(tcho2_nn ~ age + sex + group + bmi_cat + diab + hba1c + ht + pa2 + smoke2 + alcohol2 + ndrug, 
+    data = cronic, 
+    family = poisson(link = "log"))
+```
+
+```{r,error=TRUE,echo=FALSE}
+wm1 %>% tidy()
+wm1 %>% confint_tidy()
+```
+
+## 6.2 Situación 2: no convergencia 
+
+```{r}
+cov.m1 <- sandwich::vcovHC(wm1, type="HC0")
+std.err <- sqrt(diag(cov.m1))
+```
+
+```{r,echo=FALSE}
+r.est <- cbind(Estimate= coef(wm1), "Robust SE" = std.err,
+"Pr(>|z|)" = 2 * pnorm(abs(coef(wm1)/std.err), lower.tail=FALSE),
+LL = coef(wm1) - 1.96 * std.err,
+UL = coef(wm1) + 1.96 * std.err)
+
+r.est
+```
+
+
+## **Tu turno 6**
+
+- Situación 1: Genera un modelo múltiple tomando en cuenta `estatura` como confusor
+
+- Situación 2: Interpretar los coeficientes de la variable categórica **grupo**
 
 ## Referencias
 
@@ -803,19 +867,43 @@ left_join(m1,m2) %>% dplyr::select(-rowname)
 
 ## CIERRE: ¿Qué no hemos podido ver?
 
+- Regresión de Cox (Hazard Ratio): `http://www.sthda.com/english/wiki/cox-proportional-hazards-model`
 - Manipulación, limpieza y visualización de datos: `http://r4ds.had.co.nz/`
 - Análisis y visualización de DAGs: `https://ggdag.netlify.com/`
 
-```{r,fig.cap="", out.width =  '500px',echo=FALSE}
+```{r,fig.cap="", out.width =  '800px',echo=FALSE,fig.align='center'}
 knitr::include_graphics("notrack/tidy-00.png")
 ```
 
-```{r,eval=FALSE,echo=FALSE,message=FALSE}
-#generar material para estudiantes
-purl("r01.Rmd", output = "r01.R", documentation = 2)
-purl("r02.Rmd", output = "r02.R", documentation = 2)
+## CIERRE: Ciencia Reproducible
+
+```{r,fig.cap="", out.width =  '850px',echo=FALSE,fig.align='center'}
+knitr::include_graphics("notrack/repro-03.png")
 ```
 
+## CIERRE: Ciencia Reproducible
+
+```{r,fig.cap="", out.width =  '800px',echo=FALSE,fig.align='center'}
+knitr::include_graphics("notrack/repro-02.png")
+```
+
+
+```{r,eval=FALSE,echo=FALSE}
+## Tiempo a evento: Regresión de Cox (HR)
+
+#- evaluar supuestos!
+
+#referencia:
+#http://www.sthda.com/english/wiki/cox-proportional-hazards-model
+
+res.cox <- coxph(Surv(ttoaidsorexit, aids) ~ ccr5, data =  coxdb)
+
+#res.cox %>% glance()
+m1 <- res.cox %>% tidy() %>% rownames_to_column()
+m2 <- res.cox %>% confint_tidy() %>% rownames_to_column()
+left_join(m1,m2) %>% dplyr::select(-rowname)
+#res.cox %>% augment()
+```
 
 ```{r cars, eval=FALSE, echo=FALSE}
 esoph %>% as_tibble()
@@ -874,7 +962,7 @@ mosaicplot(tt, main = "esoph data set", color = TRUE)
 ```
 
 
-```{r,eval=FALSE}
+```{r,eval=FALSE,echo=FALSE}
 ## IRR: Desenlaces conteo o tasas
 glm(response~predictor1+predictor2+predictor3+ ... + offset(log(population)),
      family=poisson,data=...)
@@ -896,7 +984,7 @@ data_frame(prop.y=seq(0.01,1,0.01),
 ```
 
 
-```{r,eval=FALSE}
+```{r,eval=FALSE,echo=FALSE}
 levels(aidsdb_or$aids)
 
 epi_or <- function(data,outcome,exposure) {
@@ -913,4 +1001,11 @@ epi_or <- function(data,outcome,exposure) {
 }
 
 epi_or(aidsdb_or,aids,ccr2)
+```
+
+
+```{r,eval=FALSE,echo=FALSE,message=FALSE}
+#generar material para estudiantes
+purl("r01.Rmd", output = "r01.R", documentation = 2)
+purl("r02.Rmd", output = "r02.R", documentation = 2)
 ```
