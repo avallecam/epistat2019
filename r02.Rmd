@@ -8,7 +8,7 @@ output:
     smaller: true
     #incremental: true
     transition: faster
-    df_print: paged
+    df_print: kable
     #logo: "notrack/logo_emerge.png"
 ---
 
@@ -19,12 +19,12 @@ library(haven)         #importar diferentes formatos
 library(readxl)        #importar excel files
 library(ggdag)         #crear DAGs y conjuntos de ajuste: https://ggdag.netlify.com/
 library(compareGroups) #generar tabla 1 y 2
+library(epiR)          #generar tablas epidemiológicas
+library(epiDisplay)    #generar tablas epidemiológicas
 library(knitr)         #generar formato de tabla
 library(kableExtra)    #generar formato extra de tabla
 library(survival)      #analizar datos tiempo a evento
 library(survminer)     #visualizar datos tiempo a evento
-library(epiR)          #generar tablas epidemiológicas
-library(epiDisplay)    #generar tablas epidemiológicas
 
 set.seed(33)
 
@@ -120,6 +120,9 @@ read_dta("data-raw/chronic2.dta") %>% as_factor() %>%
 - Archivo **.R**: Documento en _texto plano_ con funciones para resolver un problema de análisis amplio.
 - Archivo **.Rmd**: Documento en _texto plano_ que integra texto, funciones y resultados. 
 
+```{r,echo=FALSE}
+aidsdb <- read_dta("data/aidsdb.dta") %>% as_factor()
+```
 
 ## Estudios Observacionales
 
@@ -161,13 +164,9 @@ t1 %>%
 
 - El investigador elige el total de **casos y controles**
 
-```{r,fig.cap="", out.width =  '500px',echo=FALSE}
-knitr::include_graphics("notrack/epi-02.png")
-```
-
 - Si cambiamos el tamaño del grupo (**casos x 100**), **sí cambia** el Riesgo Relativo (RR)
 
-```{r,echo=FALSE}
+```{r,echo=FALSE,eval=FALSE}
 aidsdb %>% 
   count(ccr2,aids) %>% 
   spread(aids,n) %>% 
@@ -190,46 +189,95 @@ aidsdb %>%
 ```
 
 
-## 1.2 Preguntas de investigación
-
-**En personas VIH+ ¿el polimorfismo SDF1(CXCR12) está *asociado* con el desarrollo del SIDA?**
-
-- base: `aidsdb.dta`
-- exposición: `sdf1`
-- desenlace: `aids`
-
-```{r}
-aidsdb <- read_dta("data/aidsdb.dta") %>% as_factor()
+```{r,fig.cap="", out.width =  '500px',echo=FALSE}
+knitr::include_graphics("notrack/epi-02.png")
 ```
 
 
-## 1.3 Estimar e interpretar OR
+## 1.2 Preguntas de investigación
 
-- Simularemos un escenario Caso-Control
-- Seleccionaremos al azar **500 casos y 500 controles**
+**En personas VIH+ ¿el polimorfismo CCR5(Delta-32) está *asociado* con el desarrollo del SIDA?**
+
+- base: `aidsdb.dta`
+- exposición: `ccr5`
+- desenlace: `aids`
 
 ```{r}
-aidsdb_or <- aidsdb %>% 
+aidsdb_or <- read_dta("data/aidsdb.dta") %>% as_factor() %>% 
   group_by(aids) %>% 
   sample_n(150) %>% 
   ungroup()
 ```
 
+> Simularemos un escenario Caso-Control: muestreo al azar de **150 casos y 150 controles**
+
+## 1.3 Estimar e interpretar OR (1)
+
+```{r, echo=FALSE,eval=FALSE}
+aidsdb_or %>% 
+  count(ccr5,aids) %>% 
+  spread(aids,n) %>% 
+  mutate(odds=Yes/No) %>% 
+  mutate(or=c(.$odds[1]/.$odds[2],NA_real_))
+
+aidsdb_or %>% 
+  count(ccr5,aids) %>% 
+  spread(aids,n) %>% 
+  mutate(Yes=Yes,
+         prev=Yes/(No+Yes),
+         odds=Yes/No) %>% 
+  mutate(or=c(.$odds[1]/.$odds[2],NA))
+```
+
+```{r}
+compareGroups(aids ~ ccr5,data = aidsdb_or,byrow=F) %>% 
+  createTable(show.ratio = T)
+```
+
+$$OR = \frac{ {Odds}_{(Y: AIDS | CCR5:Yes)} }{ {Odds}_{(Y: AIDS | CCR5:No)} }$$
+
+- En la población, el **odds** de tener sida dado que **sí poseen CCR5** es
+- **1.39** veces, 
+- el **odds** de tener sida dado que **no poseen CCR5**,
+- con un intervalo de confianza al 95% de 0.76 a 2.58.
+- Este resultado no es estadísticamente significativo con un valor **p = 0.356**
+
+## 1.3 Estimar e interpretar OR (2)
+
+```{r}
+epi.2by2(with(aidsdb_or,table(ccr5,aids)),
+         method = "case.control")
+
+#cc(aidsdb_or$aids,aidsdb_or$ccr5,graph = F)
+```
+
 ## 1.4 **Tu turno 1**
 
-**En personas VIH+ ¿el polimorfismo CCR5(delta-32) está *asociado* con el desarrollo del SIDA?**
+**En personas VIH+ ¿el polimorfismo SDF1(CXCR12) O CCR2 está *asociado* con el desarrollo del SIDA?**
 
-## 2.1 Cohorte
+
+```{r,eval=FALSE}
+compareGroups(aids ~ ccr5 + _____ + ______,data = aidsdb_or,byrow=T) %>% 
+  createTable(show.ratio = T)
+```
+
+```{r,eval=FALSE}
+epi.2by2(with(aidsdb_or,table(_____,aids)),
+         method = "case.control")
+
+epi.2by2(with(aidsdb_or,table(_____,aids)),
+         method = "case.control")
+```
+
+- **Interpretacíón:**
+
+## 2.1 Cohorte {.columns-2}
 
 - El investigador puede elegir el total de **expuestos y no expuestos**
 
-```{r,fig.cap="", out.width =  '500px',echo=FALSE}
-knitr::include_graphics("notrack/epi-01.png")
-```
-
 ```{r,echo=FALSE}
 aidsdb %>% 
-  count(ccr2,aids) %>% 
+  count(ccr5,aids) %>% 
   spread(aids,n) %>% 
   mutate(risk=Yes/(No+Yes)) %>% 
   mutate(rr=c(.$risk[1]/.$risk[2],NA))
@@ -239,48 +287,86 @@ aidsdb %>%
 
 ```{r,echo=FALSE}
 aidsdb %>% 
-  count(ccr2,aids) %>% 
+  count(ccr5,aids) %>% 
   spread(aids,n) %>% 
-  mutate(No=if_else(ccr2=="No",No*100,No %>% as.double()),
-         Yes=if_else(ccr2=="No",Yes*100,Yes %>% as.double()),
+  mutate(No=if_else(ccr5=="No",No*100,No %>% as.double()),
+         Yes=if_else(ccr5=="No",Yes*100,Yes %>% as.double()),
          risk=Yes/(No+Yes)) %>% 
   mutate(rr=c(.$risk[1]/.$risk[2],NA))
 ```
 
-## 2.2 Preguntas de investigación (2)
-
-**En personas VIH+ ¿el polimorfismo SDF1(CXCR12) *protege* contra el desarrollo del SIDA?**
-
-## 2.3 Estimar e interpretar OR
-
-```{r}
-aidsdb
+```{r,fig.cap="", out.width =  '500px',echo=FALSE}
+knitr::include_graphics("notrack/epi-01.png")
 ```
 
+## 2.2 Preguntas de investigación (2)
+
+**En personas VIH+ ¿el polimorfismo CCR5(Delta-32) *protege* contra el desarrollo del SIDA?**
+
+- base: `aidsdb.dta`
+- exposición: `ccr5`
+- desenlace: `aids`
+
+```{r}
+aidsdb <- read_dta("data/aidsdb.dta") %>% as_factor()
+```
+
+## 2.3 Estimar e interpretar RR (1)
+
+```{r,eval=FALSE,echo=FALSE}
+aidsdb %>% 
+  count(aids,ccr5)
+```
+
+```{r}
+epi.2by2(with(aidsdb,table(ccr5,aids)),
+         method = "cohort.count")
+```
+
+$$RR = \frac{ {Risk}_{(Y: AIDS | CCR5:Yes)} }{ {Risk}_{(Y: AIDS | CCR5:No)} }$$
+
+- En la población, el **riesgo** de tener sida dado que **sí poseen CCR5** es
+- **1.09** veces, 
+- el **riesgo** de tener sida dado que **no poseen CCR5**,
+- con un intervalo de confianza al 95% de 0.82 a 1.45.
+- Este resultado no es estadísticamente significativo con un valor **p = 0.378**
+
+```{r}
+#compareGroups(aids ~ ccr5,data = aidsdb,byrow=T) %>% 
+#  createTable(show.ratio = T)
+
+#cs(aidsdb$aids,aidsdb$ccr5)
+```
 
 ## 2.4 **Tu turno 2**
 
-**En personas VIH+ ¿el polimorfismo CCR5(delta-32) *protege* contra el desarrollo del SIDA?**
+**En personas VIH+ ¿el polimorfismo SDF1(CXCR12) o CCR2 *protege* contra el desarrollo del SIDA?**
 
-## 3.1 Tiempo a evento
+```{r,eval=FALSE}
+epi.2by2(with(aidsdb,table(_____,aids)),
+         method = "cohort.count")
+
+epi.2by2(with(aidsdb,table(_____,aids)),
+         method = "cohort.count")
+```
+
+- **Interpretacíón:**
+
+## 3.1 Tiempo a evento  {.columns-2}
 
 ```{r,fig.cap="", out.width =  '500px',echo=FALSE}
 knitr::include_graphics("notrack/epi-03.png")
 ```
 
-## 3.1 Tiempo a evento
-
 ```{r,fig.cap="", out.width =  '500px',echo=FALSE}
 knitr::include_graphics("notrack/epi-04.png")
 ```
 
-## 3.1 Tiempo a evento
+## 3.1 Tiempo a evento  {.columns-2}
 
 ```{r,fig.cap="", out.width =  '500px',echo=FALSE}
 knitr::include_graphics("notrack/epi-05.png")
 ```
-
-## 3.1 Tiempo a evento
 
 ```{r,fig.cap="", out.width =  '500px',echo=FALSE}
 knitr::include_graphics("notrack/epi-06.png")
@@ -288,13 +374,19 @@ knitr::include_graphics("notrack/epi-06.png")
 
 ## 3.2 Preguntas de investigación (3)
 
-**En personas VIH+ ¿el polimorfismo SDF1(CXCR12) contribuye con un mayor *tiempo* al inicio del SIDA?**
+**En personas VIH+ ¿el polimorfismo CCR5(Delta-32) contribuye con un mayor *tiempo* al inicio del SIDA?**
 
-## 3.3 Gererar tabla Kaplan-Meier e interpretar Log-Rank test
+- base: `aidsdb.dta`
+- exposición: `ccr5`
+- tiempo a evento: `ttoaidsorexit`
+- desenlace: `aids`
 
-```{r,echo=FALSE}
-coxdb <- aidsdb %>% mutate(aids=as.integer(aids)-1)
+```{r}
+coxdb <- read_dta("data/aidsdb.dta") %>% as_factor() %>% 
+  mutate(aids=as.integer(aids)-1)
 ```
+
+## 3.3 Gererar tabla e interpretar
 
 ```{r}
 fit <- survfit(Surv(ttoaidsorexit, aids) ~ ccr5, data =  coxdb)
@@ -306,17 +398,39 @@ fit %>% broom::tidy() #revisa el estrato!
 #(1-(1/84)) * (1-(1/81))
 ```
 
-```{r,fig.height=5,fig.width=7,echo=FALSE}
+## 3.3 Gererar gráfico e interpretar
+
+```{r,fig.height=4,fig.width=7,echo=FALSE}
 # Visualize with survminer
 ggsurvplot(fit, data = coxdb, risk.table = TRUE,
            conf.int = T,ggtheme = theme_bw(),#ggtheme = theme_minimal(),
            pval = T,censor=FALSE,tables.theme = theme_cleantable())
 ```
 
+- **Interpretación**
+
+- En la población,
+- (la sobrevida) el tiempo a desarrollar AIDS en sujetos CCR5+
+- es **mayor** a 
+- (la sobrevida) el tiempo a desarrollar AIDS en sujetos CCR5-.
+- Este resultado es estadísticamente significativo con un **p < 0.05**
 
 ## 3.4 **Tu turno 3**
 
-**En personas VIH+ ¿el polimorfismo CCR5(delta-32) contribuye con un mayor *tiempo* al inicio del SIDA?**
+**En personas VIH+ ¿el polimorfismo SDF1(CXCR12) o CCR2 contribuyen con un mayor *tiempo* al inicio del SIDA?**
+
+
+```{r,fig.height=5,fig.width=7,echo=FALSE,eval=FALSE}
+fit <- survfit(Surv(ttoaidsorexit, aids) ~ ____, data =  coxdb)
+
+fit %>% broom::tidy() #revisa el estrato!
+
+ggsurvplot(fit, data = coxdb, risk.table = TRUE,
+           conf.int = T,ggtheme = theme_bw(),#ggtheme = theme_minimal(),
+           pval = T,censor=FALSE,tables.theme = theme_cleantable())
+```
+
+- **Interpretación**
 
 ## RECESO
 
@@ -530,27 +644,6 @@ cc(Oswego$ill,Oswego$chocolate) #case-control
 cs(Oswego$ill,Oswego$chocolate) #cross-sectional
 ```
 
-
-```{r,eval=FALSE}
-levels(aidsdb_or$aids)
-
-epi_or <- function(data,outcome,exposure) {
-  
-  outcome_ <- enquo(outcome)
-  exposure_ <- enquo(exposure)
-  
-  data_or <- data %>% 
-  count(!!exposure_,!!outcome_) %>% 
-  spread(!!outcome_,n) #%>% 
-  #mutate(odds=levels(.$!!outcome)[2]/levels(.$!!outcome)[1]) #%>% 
-  #mutate(or=c(NA_real_,.$odds[2]/.$odds[1]))
-  return(data_or)
-}
-
-epi_or(aidsdb_or,aids,ccr2)
-```
-
-
 ## OR: coeficientes de variables categóricas
 
 ```{r}
@@ -677,6 +770,9 @@ left_join(m1,m2) %>% dplyr::select(term,log.or=estimate,or,conf.low,conf.high,p.
 - evaluar supuestos!
 
 ```{r,eval=FALSE}
+#referencia:
+#http://www.sthda.com/english/wiki/cox-proportional-hazards-model
+
 res.cox <- coxph(Surv(ttoaidsorexit, aids) ~ ccr5, data =  coxdb)
 
 #res.cox %>% glance()
@@ -688,6 +784,10 @@ left_join(m1,m2) %>% dplyr::select(-rowname)
 
 
 ## Referencias
+
+### Libro
+
+- Szklo M. & FJ Nieto. Epidemiology. Beyond the basics. Third Edition. 2014.
 
 ### Presentaciones
 
@@ -793,4 +893,24 @@ data_frame(prop.y=seq(0.01,1,0.01),
            prop.x=0.25) %>% 
   mutate(rr=(n/prop.x) / (n/prop.x)
          )
+```
+
+
+```{r,eval=FALSE}
+levels(aidsdb_or$aids)
+
+epi_or <- function(data,outcome,exposure) {
+  
+  outcome_ <- enquo(outcome)
+  exposure_ <- enquo(exposure)
+  
+  data_or <- data %>% 
+  count(!!exposure_,!!outcome_) %>% 
+  spread(!!outcome_,n) #%>% 
+  #mutate(odds=levels(.$!!outcome)[2]/levels(.$!!outcome)[1]) #%>% 
+  #mutate(or=c(NA_real_,.$odds[2]/.$odds[1]))
+  return(data_or)
+}
+
+epi_or(aidsdb_or,aids,ccr2)
 ```
