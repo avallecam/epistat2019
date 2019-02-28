@@ -272,12 +272,15 @@ $$OR = \frac{ {Odds}_{(Y: AIDS | CCR5:Yes)} }{ {Odds}_{(Y: AIDS | CCR5:No)} }$$
 
 ## 1.3 Estimar e interpretar OR (3)
 
+- segundo método
+
 ```{r}
 aidsdb_or_no <- aidsdb_or %>% mutate_if(is.factor,fct_relevel, ... = "No")
-
 compareGroups(aids ~ ccr5 + race,data = aidsdb_or_no,byrow=T) %>% 
   createTable(show.ratio = T)
+```
 
+```{r,eval=FALSE,echo=FALSE}
 #cc(aidsdb_or$aids,aidsdb_or$ccr5,graph = F)
 ```
 
@@ -329,7 +332,7 @@ aidsdb %>%
 knitr::include_graphics("notrack/epi-01.png")
 ```
 
-## 2.2 Preguntas de investigación (2)
+## 2.2 Pregunta de investigación (2)
 
 **En personas VIH+ ¿el polimorfismo CCR5(Delta-32) *protege* contra el desarrollo del SIDA?**
 
@@ -369,13 +372,16 @@ $$RR = \frac{ {Risk}_{(Y: AIDS | CCR5:Yes)} }{ {Risk}_{(Y: AIDS | CCR5:No)} }$$
 
 ## 2.3 Estimar e interpretar RR (2)
 
+- segundo método
+
 ```{r}
+aidsdb_no <- aidsdb %>% mutate_if(is.factor,fct_relevel, ... = "No")
+cs(aidsdb_no$aids,aidsdb_no$ccr5)
+```
+
+```{r,echo=FALSE,eval=FALSE}
 #compareGroups(aids ~ ccr5,data = aidsdb,byrow=T) %>% 
 #  createTable(show.ratio = T)
-
-aidsdb_no <- aidsdb %>% mutate_if(is.factor,fct_relevel, ... = "No")
-
-cs(aidsdb_no$aids,aidsdb_no$ccr5)
 ```
 
 ## 2.4 **Tu turno 2**
@@ -414,7 +420,7 @@ knitr::include_graphics("notrack/epi-05.png")
 knitr::include_graphics("notrack/epi-06.png")
 ```
 
-## 3.2 Preguntas de investigación (3)
+## 3.2 Pregunta de investigación (3)
 
 **En personas VIH+ ¿el polimorfismo CCR5(Delta-32) contribuye con un mayor *tiempo* al inicio del SIDA?**
 
@@ -535,13 +541,26 @@ knitr::include_graphics("notrack/multi-02.png")
 ```
 
 
-## GLM: verosimilitud
+## GLM: verosimilitud  {.columns-2}
 
-```{r, echo=FALSE, fig.cap="", out.width = '40%',fig.align='center'}
+```{r, echo=FALSE, fig.cap="", out.width = '75%',fig.align='center'}
 knitr::include_graphics("notrack/nmeth.3904-F3_A.jpg")
 ```
 
-```{r,fig.height=2,fig.width=3,eval=FALSE}
+- GLM = Modelos Lineales Generalizados
+
+- La estimación de parámetros se da por un proceso de optimización llamado **máxima verosimilitud** (o _likelihood_)
+
+- GLM ajusta modelos lineales de $g(y)$ con covaribles $x$
+
+$$ g(Y) = \beta_0 + \sum_{n=1}^{n} \beta_n X_n \enspace , \enspace y \sim F $$
+
+Donde: 
+
+- $F$ es la familia de distribución
+- $g(\space)$ es la función de enlace
+
+```{r,fig.height=2,fig.width=3,eval=FALSE,echo=FALSE}
 data_frame(p=seq(0,1,0.01)) %>% 
   mutate(odd=p/(1-p)) %>% 
   ggplot(aes(p,log(odd))) +
@@ -575,11 +594,11 @@ data_frame(p=seq(0,1,0.01)) %>%
 
 - **OR:** **familia:** binomial, **link:** logit
 
-$$ OR \Longrightarrow logit(\pi) = log(odds)  = log\left(\frac{\pi}{1-\pi}\right) = Y = \beta_0 + \beta_1 X_1 + . . . + \beta_n X_n + \epsilon \enspace ; \enspace y \sim Binomial $$
+$$ logit(p) = log(odds)  = log\left(\frac{p}{1-p}\right) \\ logit(p) = \beta_0 + \beta_1 X_1 + . . . + \beta_n X_n + \epsilon \enspace ; \enspace y \sim Binomial $$
 
 - El valor exponenciado de los coeficientes se pueden interpretar como **Odds Ratio (OR)**
 
-$$ Y = \beta_0 + \beta_1 X_1 \\ \begin{cases} log(odds_2) = \beta_0 + \beta_1(1) \\ log(odds_1) = \beta_0 + \beta_1(0) \end{cases} \\ log(odds_2) - log(odds_1) = \beta_1 \\ log \left(\frac{odds_2}{odds_1}\right)  = \beta_1 \\ OR = exp(\beta_1) $$
+$$ Y = \beta_0 + \beta_1 X_1 \\ \begin{cases} Y_{x=1} = log(odds_{x=1}) = \beta_0 + \beta_1(1) \\ Y_{x=0} = log(odds_{x=0}) = \beta_0 + \beta_1(0) \end{cases} \\ Y_{x=1} - Y_{x=0} = \beta_1 \\ log(odds_{x=1}) - log(odds_{x=0}) = \beta_1 \\ log \left(\frac{odds_{x=1}}{odds_{x=0}}\right)  = \beta_1 \\ OR = exp(\beta_1) $$
 
 ## 4.2 Pregunta de investigación
 
@@ -663,13 +682,13 @@ cardio <- read_xlsx("data/cardio.xlsx") %>%
 
 ## 5.1 Cohorte
 
-- **RR o PR:** **familia:** binomial, **link:** log
+- **RR:** **familia:** binomial, **link:** log
 
-$$ RR \Longrightarrow log(\pi) = log(\pi) =  \beta_0 + \beta_1 X_1 + . . . + \beta_n X_n + \epsilon \enspace ; \enspace y \sim Binomial $$
+$$ log(p) =  \beta_0 + \beta_1 X_1 + . . . + \beta_n X_n + \epsilon \enspace ; \enspace y \sim Binomial $$
 
 - El valor exponenciado de los coeficientes se pueden interpretar como **Risk Ratio (RR)**
 
-$$ Y = \beta_0 + \beta_1 X_1 \\ \begin{cases} log(p_2) = \beta_0 + \beta_1(1) \\ log(p_1) = \beta_0 + \beta_1(0) \end{cases} \\ log(p_2) - log(p_1) = \beta_1 \\ log \left(\frac{p_2}{p_1}\right)  = \beta_1 \\ RR = exp(\beta_1) $$
+$$ Y = \beta_0 + \beta_1 X_1 \\ \begin{cases} Y_{x=1} = log(p_{x=1}) = \beta_0 + \beta_1(1) \\ Y_{x=0} = log(p_{x=0}) = \beta_0 + \beta_1(0) \end{cases} \\ Y_{x=1} - Y_{x=0} = \beta_1 \\ log(p_{x=1}) - log(p_{x=0}) = \beta_1 \\ log \left(\frac{p_{x=1}}{p_{x=0}}\right)  = \beta_1 \\ RR = exp(\beta_1) $$
 
 
 ## 5.2 Pregunta de investigación
@@ -704,20 +723,16 @@ left_join(m1,m2) %>% dplyr::select(term,log.rr=estimate,rr,conf.low,conf.high,p.
 - con un intervalo de confianza AL 95% de `r round(m2$conf.low[1],2)` a `r round(m2$conf.high[1],2)`, **ajustando por** raza.
 
 - $\beta_{ccr5:yes}$
-- En la población, el **riesgo** de tener sida dado que **sí poseen CCR2** es
-- **`r round(m1$rr[2],2)`** veces, 
+- En la población, el **riesgo** de tener sida dado que **sí poseen CCR2** es **`r round(m1$rr[2],2)`** veces, 
 - el **riesgo** de tener sida dado que **no poseen CCR2**,
 - con un intervalo de confianza AL 95% de `r round(m2$conf.low[2],2)` a `r round(m2$conf.high[2],2)`, **ajustando por** raza.
 - Este resultado no es estadísticamente significativo con un valor **p = `r round(m1$p.value[2],3)`**
 
 ## 5.4 **Tu turno 5**
 
-**En personas VIH+, ajustando por raza, CCR2, SDF1 y edad, ¿el polimorfismo CCR5(Delta-32) *protege* contra el desarrollo del SIDA?**
+**En personas VIH+, ajustando por edad, ¿el polimorfismo CCR5(Delta-32) *protege* contra el desarrollo del SIDA?**
 
 - base: `aidsdb.dta`
-- covariable: `race`
-- covariable: `ccr2`
-- covariable: `sdf1`
 - covariable: `age`
 - exposición: `ccr5`
 - desenlace: `aids`
@@ -769,7 +784,7 @@ depres %>% count(cvd) %>% mutate(prev=n/sum(n))
 
 
 ```{r}
-wm1 <- glm(cvd ~ depress, data = depres, family = binomial(link = "log"))
+wm1 <- glm(cvd ~ depress, data = depres, family = binomial(link = "logit"))
 ```
 
 ```{r,echo=FALSE}
@@ -781,7 +796,7 @@ left_join(m1,m2) %>% dplyr::select(term,log.or=estimate,or,conf.low,conf.high,p.
 
 
 ```{r}
-wm1 <- glm(cvd ~ depress, data = depres, family = binomial(link = "logit"))
+wm1 <- glm(cvd ~ depress, data = depres, family = binomial(link = "log"))
 ```
 
 ```{r,echo=FALSE}
@@ -812,19 +827,30 @@ glm(tcho2 ~ age + sex + group + bmi_cat + diab + hba1c + ht + pa2 + smoke2 + alc
 
 ## 6.2 Situación 2: no convergencia 
 
+- Cambiar la familia de distribución **binomial** a **poisson**.
+- Poisson es una caso especial de la distribución binomial.
+
 ```{r}
 #alternativa: poisson
-wm1 <- glm(tcho2_nn ~ age + sex + group + bmi_cat + diab + hba1c + ht + pa2 + smoke2 + alcohol2 + ndrug, 
-    data = cronic, 
-    family = poisson(link = "log"))
+wm1 <- glm(tcho2_nn ~ age + sex + group + diab + hba1c + ht + pa2 + smoke2 + alcohol2 + ndrug, 
+    data = cronic, family = poisson(link = "log"))
 ```
 
-```{r,error=TRUE,echo=FALSE}
-wm1 %>% tidy()
-wm1 %>% confint_tidy()
+```{r,echo=FALSE}
+#wm1 %>% glance()
+m1 <- wm1 %>% tidy() %>% mutate(pr=exp(estimate)) %>% rownames_to_column()
+m2 <- wm1 %>% confint_tidy() %>% mutate_all(funs(exp)) %>% rownames_to_column()
+left_join(m1,m2) %>% 
+  dplyr::select(term,log.pr=estimate,se=std.error,pr,
+                conf.low,conf.high,p.value) %>% 
+  mutate_at(.vars = vars(-term,-p.value),round, digits = 2) %>% 
+  mutate_at(.vars = vars(p.value),round, digits = 3) 
 ```
 
 ## 6.2 Situación 2: no convergencia 
+
+- Calcular **errores estandar robustos**
+- Objetivo: controlar por violaciones en el supuesto de varianza igual a media en la regresión de Poisson.
 
 ```{r}
 cov.m1 <- sandwich::vcovHC(wm1, type="HC0")
@@ -832,20 +858,20 @@ std.err <- sqrt(diag(cov.m1))
 ```
 
 ```{r,echo=FALSE}
-r.est <- cbind(Estimate= coef(wm1), "Robust SE" = std.err,
+r.est <- cbind(Estimate= exp(coef(wm1)), "Robust SE" = exp(std.err),
 "Pr(>|z|)" = 2 * pnorm(abs(coef(wm1)/std.err), lower.tail=FALSE),
-LL = coef(wm1) - 1.96 * std.err,
-UL = coef(wm1) + 1.96 * std.err)
+LL = exp(coef(wm1)) - 1.96 * exp(std.err),
+UL = exp(coef(wm1)) + 1.96 * exp(std.err))
 
-r.est
+r.est %>% round(digits = 2)
 ```
 
 
-## **Tu turno 6**
+## 6.3 **Tu turno 6**
 
-- Situación 1: Genera un modelo múltiple tomando en cuenta `estatura` como confusor
+- **Situación 1:** Genera un modelo múltiple entre `depresión` y `ECV` tomando en cuenta `estatura` como confusor.
 
-- Situación 2: Interpretar los coeficientes de la variable categórica **grupo**
+- **Situación 2:** Interpretar los coeficientes de la variable categórica `grupo`.
 
 ## Referencias
 
@@ -856,10 +882,10 @@ r.est
 ### Presentaciones
 
 - Curso de Bioestadística. Maestría en Ciencias de la Investigación Epidemiológica. UPCH 2018.
-- José Alfredo Zavala. Regresión Lineal. 2018
-- Harold Akehurst. Bioestadística con R. Julio 2016
+- Zavala JA. Regresión Lineal. 2018
+- Akehurst H. Bioestadística con R. Julio 2016
 
-### enlaces web
+### Enlaces web
 
 - Statistics for Biologist: Points of Significance. Link: `https://www.nature.com/collections/qghhqm/pointsofsignificance`
 - Association of gene polymorphism of SDF1(CXCR12) with susceptibility to HIV-1 infection and AIDS disease progression: A meta-analysis. PLoS One. 2018 Feb 8. `https://www.ncbi.nlm.nih.gov/pubmed/29420545`
@@ -867,11 +893,14 @@ r.est
 
 ## CIERRE: ¿Qué no hemos podido ver?
 
-- Regresión de Cox (Hazard Ratio): `http://www.sthda.com/english/wiki/cox-proportional-hazards-model`
+- Regresión de Cox (Hazard Ratio): 
+  - `http://www.sthda.com/english/wiki/cox-proportional-hazards-model`
+- Selección de predictores en regresión múltiple por **LRT**: 
+  - `https://rstudio-pubs-static.s3.amazonaws.com/2899_a9129debf6bd47d2a0501de9c0dc583d.html`
+- Análisis y visualización de **DAGs**: `https://ggdag.netlify.com/`
 - Manipulación, limpieza y visualización de datos: `http://r4ds.had.co.nz/`
-- Análisis y visualización de DAGs: `https://ggdag.netlify.com/`
 
-```{r,fig.cap="", out.width =  '800px',echo=FALSE,fig.align='center'}
+```{r,fig.cap="", out.width =  '700px',echo=FALSE,fig.align='center'}
 knitr::include_graphics("notrack/tidy-00.png")
 ```
 
