@@ -495,7 +495,7 @@ espir %>%
 #identificar coeficientes y R^2^
 # recordar: y ~ x
 #wm1 <- lm(vef ~ edad*fumar + sexo, data = espir)
-wm1 <- lm(vef ~ edad*fumar, data = espir)
+wm1 <- lm(vef ~ edad*sexo, data = espir)
 #wm1 %>% glance()
 m1 <- wm1 %>% tidy() %>% rownames_to_column()
 m2 <- wm1 %>% confint_tidy() %>% rownames_to_column()
@@ -533,11 +533,54 @@ wm1 %>% augment() %>%
 wm1 %>% augment() %>% 
   #mutate(inter=str_c(fumar,":",sexo) %>% as.factor()) %>% 
   #ggplot(aes(colour=inter)) + 
-  ggplot(aes(colour=fumar)) + 
+  ggplot(aes(colour=sexo)) + 
   geom_point(aes(edad,vef),alpha=0.05) +
   geom_line(aes(edad,.fitted), lwd=1.5)
 
 ggsave("notrack/multi-02.png")
 ```
 
+
+
+```{r,eval=TRUE, echo=FALSE}
+#identificar coeficientes y R^2^
+# recordar: y ~ x
+#wm1 <- lm(vef ~ edad*fumar + sexo, data = espir)
+wm1 <- lm(vef ~ edad*fumar, data = espir)
+#wm1 %>% glance()
+m1 <- wm1 %>% tidy() %>% rownames_to_column()
+m2 <- wm1 %>% confint_tidy() %>% rownames_to_column()
+left_join(m1, m2) %>% dplyr::select(term,estimate,conf.low,conf.high#,p.value
+                             )
+```
+
+```{r,fig.height=3,fig.width=3,eval=TRUE, echo=FALSE,out.width = '90%'}
+wm1 %>% augment() %>% 
+  #mutate(inter=str_c(fumar,":",sexo) %>% as.factor()) %>% 
+  #ggplot(aes(colour=inter)) + 
+  ggplot(aes(colour=fumar)) + 
+  geom_point(aes(edad,vef),alpha=0.05) +
+  geom_line(aes(edad,.fitted), lwd=1.5)
+
+ggsave("notrack/multi-03.png")
+```
+
+```{r,eval=FALSE,echo=FALSE}
+wm1 %>% augment() %>% 
+  filter(edad>6) %>% 
+  mutate(edad=log(edad)) %>% 
+  mutate(edad=((edad*100)-200)/(5*3)) %>% 
+  mutate(fumar=fct_recode(fumar,
+                          "1"="No",
+                          "2"="Si")) %>% 
+  #mutate(inter=str_c(fumar,":",sexo) %>% as.factor()) %>% 
+  #ggplot(aes(colour=inter)) + 
+  ggplot(aes(colour=fumar)) + 
+  # geom_point(aes(edad,vef),alpha=0.05) +
+  geom_line(aes(edad,.fitted), lwd=1.5) +
+  labs(x="tiempo",y="incidencia",color="") +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 8))
+ggsave("notrack/0-dynamics.png",width = 4,height = 3,dpi = "retina")
+
+```
 

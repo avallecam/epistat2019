@@ -438,7 +438,7 @@ coxdb <- read_dta("data/aidsdb.dta") %>% as_factor() %>%
 coxdb %>% glimpse()
 ```
 
-## 3.3 Gererar tabla Kaplan Meier
+## 3.3 Generar tabla Kaplan Meier
 
 ```{r}
 fit <- survfit(Surv(ttoaidsorexit, aids) ~ ccr5, data =  coxdb)
@@ -450,7 +450,7 @@ fit %>% broom::tidy() #revisa el estrato!
 #(1-(1/84)) * (1-(1/81))
 ```
 
-## 3.3 Gererar gráfico e interpretar (1)
+## 3.3 Generar gráfico e interpretar (1)
 
 ```{r,fig.height=5,fig.width=8,echo=FALSE,fig.align='center'}
 # Visualize with survminer
@@ -459,7 +459,7 @@ ggsurvplot(fit, data = coxdb, risk.table = TRUE,
            pval = T,censor=FALSE,tables.theme = theme_cleantable())
 ```
 
-## 3.3 Gererar gráfico e interpretar (2)
+## 3.3 Generar gráfico e interpretar (2)
 
 ```{r}
 survdiff(Surv(ttoaidsorexit, aids) ~ ccr5, data =  coxdb)
@@ -560,11 +560,15 @@ Donde:
 - $F$ es la familia de distribución
 - $g(\space)$ es la función de enlace
 
-```{r,fig.height=2,fig.width=3,eval=FALSE,echo=FALSE}
+```{r,fig.height=3,fig.width=6,eval=FALSE,echo=FALSE}
 data_frame(p=seq(0,1,0.01)) %>% 
-  mutate(odd=p/(1-p)) %>% 
-  ggplot(aes(p,log(odd))) +
+  mutate(odd=p/(1-p),
+         logit=log(odd)) %>% 
+  pivot_longer(cols = -p,names_to = "key",values_to = "value") %>% 
+  mutate(key=fct_rev(key)) %>% 
+  ggplot(aes(p,value)) +
   geom_point() +
+  facet_wrap(~key,scales = "free") +
   coord_flip()
 ```
 
@@ -639,7 +643,7 @@ left_join(m1,m2) %>% dplyr::select(term,log.or=estimate,or,conf.low,conf.high,p.
 - con un intervalo de confianza al 95% de `r round(m2$conf.low[2],2)` a `r round(m2$conf.high[2],2)`, **ajustando por** raza.
 - Este resultado no es estadísticamente significativo con un valor **p = `r round(m1$p.value[2],3)`**
 
-## 4.3 interpretar variables contínuas 
+## 4.3 Interpretar variables contínuas 
 
 ```{r}
 wm1 <- glm(aids ~ ccr5 + age, data = aidsdb_or_no, family = binomial(link = "logit"))
