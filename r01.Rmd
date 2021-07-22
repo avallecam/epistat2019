@@ -9,6 +9,8 @@ output:
     #incremental: true
     transition: faster
     #logo: "notrack/logo_emerge.png"
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE, message=FALSE}
@@ -244,6 +246,7 @@ espir %>%
   ggplot(aes(edad,vef)) +
   geom_point() + 
   geom_smooth(method = "lm")
+ggsave("notrack/multi-00.png")
 ```
 
 <!-- - ¿qué pasa si borramos `method = "lm"`? -->
@@ -540,7 +543,11 @@ wm1 %>% augment() %>%
 ggsave("notrack/multi-02.png")
 ```
 
+## Cambiamos variables {.columns-2}
 
+### ¿cómo se ve el modelo?
+
+$$ Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 (X_1 * X_2) + \epsilon $$
 
 ```{r,eval=TRUE, echo=FALSE}
 #identificar coeficientes y R^2^
@@ -553,6 +560,13 @@ m2 <- wm1 %>% confint_tidy() %>% rownames_to_column()
 left_join(m1, m2) %>% dplyr::select(term,estimate,conf.low,conf.high#,p.value
                              )
 ```
+
+- $\beta_{interacción}$
+- La diferencia en la media de VEF asociado al incremento en 1 año de edad en **mujeres**
+- **menos**
+- la diferencia en la media de VEF asociado al incremento en 1 año de edad en **hombres**
+- **es `r round(coef(wm1)[4],2)` mL/s**, con un IC 95% de `r round(m2$conf.low[4],2)` a `r round(m2$conf.high[4],2)`.
+
 
 ```{r,fig.height=3,fig.width=3,eval=TRUE, echo=FALSE,out.width = '90%'}
 wm1 %>% augment() %>% 
@@ -584,3 +598,40 @@ ggsave("notrack/0-dynamics.png",width = 4,height = 3,dpi = "retina")
 
 ```
 
+# Resumen gráfico
+
+## modelo simple
+
+$$ Y = \beta_0 + \beta_1 X_1 + \epsilon $$
+$$ VEF = 0.60 + 0.22 (edad) + \epsilon $$
+
+```{r,fig.cap="", out.width= '35%',echo=FALSE, fig.align='center'}
+knitr::include_graphics("notrack/multi-00.png")
+```
+
+## modelo múltiple
+
+$$ Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \epsilon $$
+$$ VEF = 0.60 + 0.22 (edad) - 0.32 (sexo) + \epsilon $$
+
+```{r,fig.cap="", out.width= '35%',echo=FALSE, fig.align='center'}
+knitr::include_graphics("notrack/multi-01.png")
+```
+
+## modelo múltiple con interacción
+
+$$ Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 (X_1 * X_2) + \epsilon $$
+$$ VEF = 0.07 + 0.27 (edad) + 0.78 (sexo_{fem}) - 0.11 (edad * sexo_{fem}) + \epsilon $$
+
+```{r,fig.cap="", out.width= '35%',echo=FALSE, fig.align='center'}
+knitr::include_graphics("notrack/multi-02.png")
+```
+
+## modelo múltiple con interacción
+
+$$ Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 (X_1 * X_2) + \epsilon $$
+$$ VEF = 0.25 + 0.24 (edad) + 1.94 (fumar_{sí}) - 0.16 (edad * fumar_{sí}) + \epsilon $$
+
+```{r,fig.cap="", out.width= '35%',echo=FALSE, fig.align='center'}
+knitr::include_graphics("notrack/multi-03.png")
+```

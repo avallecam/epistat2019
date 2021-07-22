@@ -1,0 +1,21 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# epistat2019
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+```{r,fig.cap="", out.width= '100%',echo=FALSE, fig.align='center'}
+knitr::include_graphics("figure/epistat2019.png")
+```
