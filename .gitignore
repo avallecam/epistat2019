@@ -1,6 +1,5 @@
 *.pdf
 *.html
-*/*
 *.Rproj.user
 *.Rproj
 .Rproj.user
@@ -8,3 +7,6 @@
 *clase.Rmd
 *template*
 *.zip
+notrack/*
+data/*
+data-raw/*
