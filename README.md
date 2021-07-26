@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# epistat2019
+# análisis epidemiológico en R
 
 <!-- badges: start -->
 <!-- badges: end -->
