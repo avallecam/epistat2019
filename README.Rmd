@@ -19,3 +19,17 @@ knitr::opts_chunk$set(
 ```{r,fig.cap="", out.width= '100%',echo=FALSE, fig.align='center'}
 knitr::include_graphics("figure/epistat2019.png")
 ```
+
+## diapositivas
+
+- modelos lineales [aquí](https://avallecam.github.io/epistat2019/r01.html#1)
+
+- análisis epidemiológico [aquí](https://avallecam.github.io/epistat2019/r02.html#1)
+
+## contacto
+
+Andree Valle Campos \| [`@avallecam`](https://twitter.com/avallecam) \|
+<avallecam@gmail.com>
+
+Project Link: <https://github.com/avallecam/epistat2019>
+
