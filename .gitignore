@@ -9,3 +9,4 @@
 notrack/*
 data/*
 data-raw/*
+*.Rhistory
